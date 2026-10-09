@@ -1,0 +1,80 @@
+[
+ {
+  "NC": "Nível Territorial (Código)",
+  "NN": "Nível Territorial",
+  "MC": "Unidade de Medida (Código)",
+  "MN": "Unidade de Medida",
+  "V": "Valor",
+  "D1C": "Brasil (Código)",
+  "D1N": "Brasil",
+  "D2C": "Variável (Código)",
+  "D2N": "Variável",
+  "D3C": "Mês (Código)",
+  "D3N": "Mês"
+ },
+ {
+  "NC": "1",
+  "NN": "Brasil",
+  "MC": "30",
+  "MN": "Número-índice",
+  "V": "73.0780465845240",
+  "D1C": "1",
+  "D1N": "Brasil",
+  "D2C": "2266",
+  "D2N": "IPCA - Número-índice (base: dezembro de 1993 = 100)",
+  "D3C": "199311",
+  "D3N": "novembro 1993"
+ },
+ {
+  "NC": "1",
+  "NN": "Brasil",
+  "MC": "30",
+  "MN": "Número-índice",
+  "V": "100.0000000000000",
+  "D1C": "1",
+  "D1N": "Brasil",
+  "D2C": "2266",
+  "D2N": "IPCA - Número-índice (base: dezembro de 1993 = 100)",
+  "D3C": "199312",
+  "D3N": "dezembro 1993"
+ },
+ {
+  "NC": "1",
+  "NN": "Brasil",
+  "MC": "30",
+  "MN": "Número-índice",
+  "V": "141.3100000000000",
+  "D1C": "1",
+  "D1N": "Brasil",
+  "D2C": "2266",
+  "D2N": "IPCA - Número-índice (base: dezembro de 1993 = 100)",
+  "D3C": "199401",
+  "D3N": "janeiro 1994"
+ },
+ {
+  "NC": "1",
+  "NN": "Brasil",
+  "MC": "30",
+  "MN": "Número-índice",
+  "V": "6153.0900000000000",
+  "D1C": "1",
+  "D1N": "Brasil",
+  "D2C": "2266",
+  "D2N": "IPCA - Número-índice (base: dezembro de 1993 = 100)",
+  "D3C": "202201",
+  "D3N": "janeiro 2022"
+ },
+ {
+  "NC": "1",
+  "NN": "Brasil",
+  "MC": "30",
+  "MN": "Número-índice",
+  "V": "6215.2400000000000",
+  "D1C": "1",
+  "D1N": "Brasil",
+  "D2C": "2266",
+  "D2N": "IPCA - Número-índice (base: dezembro de 1993 = 100)",
+  "D3C": "202202",
+  "D3N": "fevereiro 2022"
+ }
+]

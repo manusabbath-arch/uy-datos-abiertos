@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+dist/
+build/
+*.egg-info/
+# datos bajados: este repo publica código, no datos
+datos/
+.ruff_cache/
