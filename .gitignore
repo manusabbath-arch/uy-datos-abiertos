@@ -8,3 +8,5 @@ build/
 # datos bajados: este repo publica código, no datos
 datos/
 .ruff_cache/
+# lo que la guarda de privacidad verifica y no se publica (ver tests/test_privacidad.py)
+.privacidad-local
