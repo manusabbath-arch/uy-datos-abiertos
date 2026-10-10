@@ -23,8 +23,16 @@ sobre los archivos completos de temperatura (332.070 valores, 12.059.752 bytes) 
    rechaza.
 2. **Un valor vacío es un nulo, no un cero.** Y una fila entera vacía (`;;`, siete en cada
    archivo, la última incluida) es un separador, no un dato: se saltea.
-3. **Un día local al que le falta una hora no es un día.** `serie_diaria()` devuelve `valor=None`
-   y `horas` declaradas: una suma sobre horas sueltas es un piso, no el total.
+3. **Un día local al que le falta alguna hora no es un día.** `serie_diaria()` devuelve `valor=None`
+   y `horas` declaradas: una suma sobre horas sueltas es un piso, no el total. Pero **"24" no es la
+   cadencia de todas las variables**: el viento se publica **cada dos horas** (12 por día) y la
+   insolación es diaria; el día se mide contra `OBS_POR_DIA`, la cadencia de su propia variable.
+4. **La unidad que declara el metadato puede no cerrar con el archivo.** El metadato de insolación
+   dice que `heliofania` son «horas de brillo del Sol en el transcurso del día», y el archivo trae
+   **4 valores por encima de 24 de 3.437, tres de ellos el 01/08/2026** (Salto 63,2 · Artigas 38,0 ·
+   Mercedes 37,6). Son imposibles como horas y **no se corrigen ni se descartan: se declaran**, y
+   `resumen()` los pone en los extremos por columna. Un rango (0, 24) habría rechazado el archivo
+   entero por cuatro filas — que es el otro modo de falla.
 
 Uso:
     python -m uydatos.inumet bajar precipitacion datos/inumet_precip.csv
@@ -90,18 +98,35 @@ ESTACIONES = (
 
 # Uruguay es UTC−3 todo el año desde 2015. Es un parámetro, no una constante escondida.
 DESFASE_LOCAL = -3
-HORAS_POR_DIA = 24
+
+# Observaciones por día que publica cada variable. **Medido el 09/10/26 sobre los seis archivos
+# completos:** temperatura, precipitación, humedad y presión son hora a hora (24); el viento es
+# **cada dos horas** (12: 10.841 de 11.690 días-estación) y la insolación es diaria (1). Un día al
+# que le falten observaciones no es un día, pero "faltan" se mide contra la cadencia de SU variable.
+OBS_POR_DIA: dict[str, int] = {
+    "temp_aire": 24,
+    "precip_horario": 24,
+    "hum_relativa": 24,
+    "dir_viento": 12,
+    "int_viento": 12,
+    "pres_atm_mar": 24,
+    "heliofania": 1,
+}
+OBS_POR_DIA_POR_DEFECTO = 24
 
 COLUMNAS_FIJAS = ["fecha", "estacion_id"]
 AGREGACIONES = ("promedio", "max", "min", "suma")
 
-# Rangos físicos amplios: atrapan un dato imposible, no uno raro. Solo las columnas medidas o
-# acotadas por definición; el resto se lee como número y nada más.
+# Rangos físicos amplios: atrapan un dato imposible, no uno raro. Solo las columnas cuyo rango se
+# puede sostener. **`heliofania` no está a propósito**: su metadato declara horas de brillo del Sol
+# y el archivo trae 4 valores por encima de 24 —imposibles—, así que un rango (0, 24) rechazaría el
+# archivo entero por cuatro filas. Esos cuatro se declaran en `resumen()`, no se descartan.
 RANGOS: dict[str, tuple[float, float]] = {
     "temp_aire": (-30.0, 50.0),
     "precip_horario": (0.0, 200.0),
     "hum_relativa": (0.0, 100.0),
     "dir_viento": (0.0, 360.0),
+    "int_viento": (0.0, 250.0),  # km/h, la unidad que declara el metadato
     "pres_atm_mar": (900.0, 1100.0),
 }
 
@@ -180,6 +205,15 @@ def leer_archivo(ruta: Path, columnas: Sequence[str]) -> list[dict]:
     return filas
 
 
+def _columnas_de(columna: str) -> tuple[str, ...]:
+    """Las columnas declaradas del dataset al que pertenece `columna`. El viento trae dos, así que
+    leer un archivo de viento pidiendo una sola columna da «columnas inesperadas»."""
+    for _, columnas, _ in DATASETS.values():
+        if columna in columnas:
+            return columnas
+    return (columna,)
+
+
 def filas_sin_dato(ruta: Path) -> int:
     """Cuántas líneas del archivo no son filas de dato: las que no traen fecha.
 
@@ -205,12 +239,16 @@ def valor_por_estacion(archivo: Path, nombre: str) -> list[dict]:
 
 
 def resumen(serie: list[dict], desfase_horas: int = DESFASE_LOCAL) -> dict:
-    """Cobertura por estación: filas, extremos, nulos **y días locales con menos de 24 horas**. El
+    """Cobertura por estación: filas, **extremos por columna**, nulos y días locales incompletos. El
     denominador va en la salida porque un promedio por estación sobre series de distinto largo
     no es comparable.
 
     Los días se cuentan en hora local, igual que en `serie_diaria()`: contar días UTC y agregar
-    días locales daría dos denominadores distintos para la misma serie.
+    días locales daría dos denominadores distintos para la misma serie. Y "completo" se mide
+    contra la cadencia de la variable (`OBS_POR_DIA`), no contra 24: el viento publica 12 por día.
+
+    Los **extremos** están acá y no en una validación aparte porque son lo que deja ver un valor
+    imposible sin rechazar el archivo: `heliofania` trae 63,2 h de brillo del Sol en un día.
     """
     if not serie:
         raise InumetInvalido("serie vacía: no hay nada que medir")
@@ -224,18 +262,28 @@ def resumen(serie: list[dict], desfase_horas: int = DESFASE_LOCAL) -> dict:
         "primera": serie[0]["fecha"],
         "ultima": serie[-1]["fecha"],
     }
+    obs_esperadas = max(
+        (OBS_POR_DIA.get(c, OBS_POR_DIA_POR_DEFECTO) for c in columnas), default=OBS_POR_DIA_POR_DEFECTO
+    )
     salida["estaciones"] = {}
     for estacion in sorted(por_estacion):
         filas = por_estacion[estacion]
         por_dia: dict[date, list[dict]] = defaultdict(list)
         for f in filas:
             por_dia[(f["fecha"] + timedelta(hours=desfase_horas)).date()].append(f)
-        completos = sum(1 for del_dia in por_dia.values() if len(del_dia) >= HORAS_POR_DIA)
+        completos = sum(1 for del_dia in por_dia.values() if len(del_dia) >= obs_esperadas)
         salida["estaciones"][estacion] = {
             "filas": len(filas),
             "primera": min(f["fecha"] for f in filas),
             "ultima": max(f["fecha"] for f in filas),
             "nulos": {c: sum(1 for f in filas if f[c] is None) for c in columnas},
+            "extremos": {
+                c: {
+                    "min": min((f[c] for f in filas if f[c] is not None), default=None),
+                    "max": max((f[c] for f in filas if f[c] is not None), default=None),
+                }
+                for c in columnas
+            },
             "dias": len(por_dia),
             "dias_completos": completos,
         }
@@ -248,6 +296,7 @@ def serie_diaria(
     columna: str,
     agregacion: str,
     desfase_horas: int = DESFASE_LOCAL,
+    obs_por_dia: Optional[int] = None,
 ) -> list[dict]:
     """Agrega la serie horaria al día local de `estacion`.
 
@@ -255,13 +304,21 @@ def serie_diaria(
     `max` (y el `min`), para la lluvia es la `suma`, y elegir por vos es exactamente lo que este
     paquete no hace. `desfase_horas` es el desfase de la hora local contra UTC (Uruguay: −3).
 
-    Un día al que le falta alguna hora —o que tiene algún nulo— devuelve `valor=None`, con
+    `obs_por_dia` es cuántas observaciones publica la fuente por día para esa columna; si no se
+    pasa, sale de `OBS_POR_DIA` —**el viento publica 12, no 24**, y medirlo contra 24 deja todos sus
+    días en `None`—.
+
+    Un día al que le falta alguna observación —o que tiene algún nulo— devuelve `valor=None`, con
     `horas` y `nulos` declarados: una suma sobre horas sueltas es un piso, no el total del día.
     """
     if agregacion not in AGREGACIONES:
         raise InumetInvalido(f"agregación desconocida {agregacion!r}; las declaradas son {AGREGACIONES}")
     if columna not in (serie[0] if serie else {}):
         raise InumetInvalido(f"columna desconocida {columna!r}")
+    if obs_por_dia is None:
+        if columna not in OBS_POR_DIA:
+            raise InumetInvalido(f"no sé cuántas observaciones por día publica {columna!r}; pasá obs_por_dia")
+        obs_por_dia = OBS_POR_DIA[columna]
     por_dia: dict[date, list[Optional[float]]] = defaultdict(list)
     for f in serie:
         if f["estacion"] == estacion:
@@ -273,7 +330,7 @@ def serie_diaria(
         valores = por_dia[dia]
         numeros = [v for v in valores if v is not None]
         horas, nulos = len(valores), len(valores) - len(numeros)
-        total = horas >= HORAS_POR_DIA and nulos == 0
+        total = horas >= obs_por_dia and nulos == 0
         if not total or not numeros:
             valor = None
         elif agregacion == "suma":
@@ -324,9 +381,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.orden == "bajar":
         print(descargar(args.nombre, args.destino))
         return 0
-    serie = valor_por_estacion(args.archivo, args.nombre) if args.orden == "resumen" else None
-    if serie is not None:
-        r = resumen(serie)
+    if args.orden == "resumen":
+        # Se lee con las columnas declaradas del dataset, no con `valor_por_estacion()`: el resumen
+        # vale también para la insolación, que es diaria y es la que trae el valor imposible.
+        columnas = DATASETS[args.nombre][1]
+        r = resumen(leer_archivo(args.archivo, columnas))
         sin_dato = filas_sin_dato(args.archivo)
         print(f"{r['filas']} filas de dato y {sin_dato} líneas sin dato, {r['primera']} a {r['ultima']}")
         for estacion, d in r["estaciones"].items():
@@ -334,8 +393,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 f"  {estacion:24} {d['filas']:>7} filas  {d['dias']:>5} días "
                 f"({d['dias_completos']} completos)  nulos {d['nulos']}"
             )
+            for columna, e in d["extremos"].items():
+                print(f"      {columna}: {e['min']} .. {e['max']}")
         return 0
-    serie = leer_archivo(args.archivo, (args.columna,))
+    serie = leer_archivo(args.archivo, _columnas_de(args.columna))
     diaria = serie_diaria(serie, args.estacion, args.columna, args.agregacion)
     completos = [d for d in diaria if d["valor"] is not None]
     print(f"{args.estacion}: {len(completos)} de {len(diaria)} días con {args.agregacion} calculable")

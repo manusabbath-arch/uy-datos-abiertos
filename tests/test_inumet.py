@@ -21,6 +21,7 @@ from uydatos.inumet import (
     DATASETS,
     DESFASE_LOCAL,
     ESTACIONES,
+    OBS_POR_DIA,
     InumetInvalido,
     filas_sin_dato,
     leer_archivo,
@@ -190,7 +191,60 @@ class TestDiaria:
             serie_diaria(serie, "Salto G3", "temp_aire", "max")
 
 
+class TestCadencia:
+    """La cadencia no es la misma en todas las variables: medir el viento contra 24 lo deja vacío.
+
+    Medido el 09/10/26 sobre el archivo completo: el viento publica **12 observaciones por día**
+    (10.841 de 11.690 días-estación), no 24.
+    """
+
+    def _viento(self, tmp_path):
+        ruta = tmp_path / "v.csv"
+        filas = [
+            f"{(datetime(2020, 1, 1, 3, 0) + timedelta(hours=2 * i)).strftime('%Y-%m-%d %H:%M')}"
+            f";Salto G3;{90 + i};{5 + i}"
+            for i in range(12)
+        ]
+        _escribir(ruta, filas, "fecha;estacion_id;dir_viento;int_viento")
+        return leer_archivo(ruta, DATASETS["viento"][1])
+
+    def test_la_cadencia_declarada(self):
+        assert OBS_POR_DIA["int_viento"] == 12 and OBS_POR_DIA["temp_aire"] == 24
+
+    def test_doce_observaciones_son_un_dia_de_viento(self, tmp_path):
+        (dia,) = serie_diaria(self._viento(tmp_path), "Salto G3", "int_viento", "max")
+        assert (dia["valor"], dia["horas"]) == (16.0, 12)
+
+    def test_el_mismo_dia_contra_24_horas_queda_en_none(self, tmp_path):
+        (dia,) = serie_diaria(self._viento(tmp_path), "Salto G3", "int_viento", "max", obs_por_dia=24)
+        assert dia["valor"] is None and dia["horas"] == 12
+
+    def test_una_columna_sin_cadencia_declarada_pide_el_parametro(self, tmp_path):
+        ruta = tmp_path / "x.csv"
+        _escribir(ruta, ["2020-01-01 00:00;Salto G3;1.0"], "fecha;estacion_id;otra_cosa")
+        serie = leer_archivo(ruta, ("otra_cosa",))
+        with pytest.raises(InumetInvalido, match="observaciones por día"):
+            serie_diaria(serie, "Salto G3", "otra_cosa", "max")
+
+
 class TestResumen:
+    def test_el_resumen_declara_los_extremos_por_columna(self, tmp_path):
+        ruta = tmp_path / "t.csv"
+        _escribir(ruta, ["2020-01-01 00:00;Salto G3;-6.3", "2020-01-01 01:00;Salto G3;41.0"])
+        r = resumen(leer_archivo(ruta, ("temp_aire",)))
+        assert r["estaciones"]["Salto G3"]["extremos"]["temp_aire"] == {"min": -6.3, "max": 41.0}
+
+    def test_la_insolacion_imposible_no_se_rechaza_ni_se_arregla(self, tmp_path):
+        """Medido el 09/10/26: **4 valores por encima de 24 h en 3.437 filas**, tres el 01/08/2026.
+
+        `heliofania` no tiene rango a propósito —su metadato declara horas de brillo del Sol—: un
+        (0, 24) rechazaría el archivo entero por cuatro filas. Se declaran en los extremos.
+        """
+        ruta = tmp_path / "i.csv"
+        _escribir(ruta, ["2026-08-01 00:00;Salto G3;63.2"], "fecha;estacion_id;heliofania")
+        r = resumen(leer_archivo(ruta, DATASETS["insolacion"][1]))
+        assert r["estaciones"]["Salto G3"]["extremos"]["heliofania"]["max"] == 63.2
+
     def test_cuenta_por_estacion_nulos_y_dias_completos(self, tmp_path):
         ruta = tmp_path / "t.csv"
         filas = [

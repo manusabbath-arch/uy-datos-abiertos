@@ -51,12 +51,29 @@ Medido sobre el archivo real de temperatura: **332.070 filas de dato y 8 líneas
 estaciones, del 2020-01-01 00:00 UTC al 2026-10-09 03:00 UTC. Sobre precipitación, en Salto:
 **1.457 de 1.532 días locales** con suma calculable (95,1%); el 2026-10-07 sumó 23,9 mm.
 
-**Lo que queda sin verificar, y se declara:** de los otros cuatro datasets (humedad, viento,
-presión, insolación) se midió **el encabezado** por petición de rango, no el contenido. Dos cosas
-ya se sabe que son distintas: **viento trae dos columnas de valor** (`dir_viento;int_viento`) y
-**insolación es diaria y de cinco estaciones**, no horaria de siete. `DATASETS` los declara con esa
-forma, pero el contenido no se midió: hasta que no se mida, no se puede afirmar que no tengan otra
-trampa.
+**Los seis quedaron medidos** (el encabezado primero, con petición de rango, y después el archivo
+entero), y los cuatro últimos tenían cada uno lo suyo:
+
+| Variable | Filas de dato | Cadencia | Lo que apareció |
+|---|---|---|---|
+| temperatura | 332.070 | horaria | — |
+| precipitación | 291.085 | horaria | — |
+| humedad | 329.794 | horaria | — |
+| presión | 326.207 | horaria | — |
+| **viento** | 137.030 | **cada dos horas (12 al día)** | y trae **dos** columnas de valor |
+| **insolación** | 3.437 | **diaria, cinco estaciones** | **4 valores por encima de 24 h**, tres el 01/08/2026 |
+
+Las dos correcciones que salieron de medirlos, y que ya están en el módulo:
+
+- **La cadencia no es 24 para todas.** `serie_diaria()` medía contra 24 horas fijas, así que **el
+  viento habría quedado entero en `None`** —publica 12 por día, medido en 10.841 de 11.690
+  días-estación—. Ahora la cadencia vive en `OBS_POR_DIA`, por columna.
+- **El metadato de insolación declara «horas de brillo del Sol en el transcurso del día» y el
+  archivo trae 63,2 h.** Son 4 filas de 3.437 —tres el mismo día, en Salto (63,2), Artigas (38,0) y
+  Mercedes (37,6)— y ninguna otra pasa de 20: no es ruido, es un evento de la fuente. Un rango
+  (0, 24) las habría tratado como el error del servidor y habría rechazado **el archivo entero**.
+  Se declaran en los extremos por columna de `resumen()`; `heliofania` queda sin rango **a
+  propósito**.
 
 ## 3. Candidatas verificadas que **no** entraron todavía
 
@@ -145,7 +162,7 @@ una línea y queda como pendiente declarado, no como conclusión.
 
 | # | Fuente | Estado | Necesidad que cierra | Límite |
 |---|---|---|---|---|
-| 1 | **INUMET** (6 variables) | **hecho** en 0.3.0 | clima en siete estaciones del país, no una | cuatro variables sin medir más allá del encabezado |
+| 1 | **INUMET** (6 variables) | **hecho** en 0.3.0 | clima en siete estaciones del país, no una | cuatro variables medidas sólo en su encabezado |
 | 2 | **Sanciones DSS** | pendiente | el enforcement del SIPC, y un lector público | PII de terceros; se corta en 2024 |
 | 3 | **Probar las URLs del INE (ECH)** | pendiente, 1 línea | el nivel socioeconómico por zona | puede dar 404: es lo que hay que ver |
 | 4 | **ANCAP cantidad de ventas** | pendiente | el denominador de mercado del combustible | sin consumidor todavía |
@@ -161,6 +178,10 @@ con licencia propia, y este repositorio publica código, no datos (ver `.gitigno
 |---|---|---|
 | `inumet_temp.csv` | `ddcd33ddb7c5eca6602e2302728e0ab0baf36c58696a48269ea2441aa18819c4` | 332.070 valores; 8 líneas sin dato; 7 estaciones |
 | `inumet_precip.csv` | `f89d57659d371ef8156ec896b0d4d70ad9f2259bb334a8f863a5a4e4a73c39ce` | 291.085 valores; 11.780 de 12.223 días-UTC con 24 h |
+| `inumet/humedad.csv` | `1ae48bab3428d8c33c24e8804847f6e8acd647909d83e6385f7a86e5334e976c` | 329.794 valores; horaria; 10–100 % |
+| `inumet/viento.csv` | `2d82284ca544b5fd1b6f902e305f35e4b3fd7cf14b927da6b1640259faec748d` | 137.030 valores; **12 por día**; dos columnas |
+| `inumet/presion.csv` | `d3f935e4e116185135886908d4702ab3cbff31c7a43e4ae724df3614df37fcb7` | 326.207 valores; horaria; 990,3–1.037,4 hPa |
+| `inumet/insolacion.csv` | `38095a881a42e3c2d95d60345ea611023d5369ab931b51450355ab4663b21554` | 3.437 valores; diaria; **4 por encima de 24 h** |
 | `dss_sanciones.csv` | `241a78a15e951bf960f93efc12aebe0d04dc343b24198a2fa4899d1872dd4cd0` | 1.528 resoluciones; corte 2024; 483 por precio |
 | `ancap_ventas.csv` | `2c648ef7eb8446c88ab46e6bbe78dd0e270fcc6566645e73dbb4fbd650dc3f7a` | 1.199 filas; unidades en miles de m³ |
 

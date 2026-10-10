@@ -6,7 +6,14 @@
   estaciones del país (temperatura, precipitación puntual, humedad, viento, presión y
   insolación). Rechaza la fila cuyo `estacion_id` trae el texto de un error del servidor
   (`' please try again later.'`, medido en los dos archivos completos) y no agrega un día local
-  al que le falte una hora. Ver `docs/2026-10-09-fuentes-candidatas.md`.
+  al que le falte una observación. Ver `docs/2026-10-09-fuentes-candidatas.md`.
+- **La cadencia por variable está declarada y medida** (`OBS_POR_DIA`): temperatura, precipitación,
+  humedad y presión son horarias, **el viento publica 12 por día** y la insolación es diaria.
+  Medir el viento contra 24 horas dejaba todos sus días en `None`.
+- **`resumen()` declara los extremos por columna.** El metadato de insolación dice «horas de brillo
+  del Sol» y el archivo trae **4 valores por encima de 24 de 3.437** (Salto 63,2; Artigas 38,0;
+  Mercedes 37,6; Colonia 33,2), tres el 01/08/2026. No se corrigen ni se descartan: `heliofania`
+  no lleva rango a propósito, porque un (0, 24) rechazaría el archivo entero.
 - La versión sube a 0.3.0 y **`mcp-uruguay` tiene el pin `uydatos>=0.2.1,<0.3`**: hay que moverlo
   antes de publicar esta versión, o el servidor MCP no la va a poder usar.
 

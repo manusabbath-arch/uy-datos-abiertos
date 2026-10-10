@@ -8,6 +8,8 @@ no para validar la lógica: eso lo hacen los demás tests, sin red.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from uydatos import ancap, bcu, ibge, indec, inumet, salto_grande
@@ -45,6 +47,14 @@ def test_ancap_csv(tmp_path):
 
 def test_catalogo_inia_tiene_csv_anuales():
     assert any("ppt_tmax_tmin_sg_" in r["url"] for r in recursos("inia-precipitacion-temps-extremas-sg"))
+
+
+def test_inumet_los_seis_datasets_declaran_un_solo_csv():
+    """Si un dataset cambia de nombre, o sube un segundo archivo de datos, `descargar()` deja de
+    poder elegir cuál es el bueno: mejor enterarse acá y no en la corrida de alguien."""
+    for nombre, (dataset, _, _) in inumet.DATASETS.items():
+        nombres = [Path(r["url"].split("?")[0]).name for r in recursos(dataset)]
+        assert len([n for n in nombres if n.startswith("inumet_")]) == 1, f"{nombre}: {nombres}"
 
 
 def test_inumet_temperatura_contrato(tmp_path):
