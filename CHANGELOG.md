@@ -1,6 +1,6 @@
 # Cambios
 
-## 0.3.0 — sin publicar
+## 0.3.0 — 2026-10-10
 
 - **Nuevo en `uydatos.salto_grande`: las lecturas** (`DatosHidrometeorologicos`) de altura, lluvia
   y caudal cada 15 minutos, con `tramos()`, `resumen_diario()` y `cobertura()`. Trampas medidas el
@@ -26,8 +26,17 @@
   es la codificación: los CSV vienen en **cp1252**, y leerlos como UTF-8 no falla, convierte `año` en
   `aÃ±o` — el lector rechaza el encabezado que no cierra en `año, valor`, que es el detector.
   Ver `docs/2026-10-09-mides-medicion.md`.
-- La versión sube a 0.3.0 y **`mcp-uruguay` tiene el pin `uydatos>=0.2.1,<0.3`**: hay que moverlo
-  antes de publicar esta versión, o el servidor MCP no la va a poder usar.
+- **Nuevo: `uydatos.red`**, la única salida a la red del paquete: User-Agent propio, timeout y
+  tres reintentos (un 4xx no se reintenta). Los siete lectores pasan por ahí; el BCU era el único
+  que no mandaba User-Agent.
+- **Nuevo: `uydatos.procedencia`**, el sello de un número: fuente, fecha de la copia, sha256, bytes y
+  filas. Una ruta que no existe se rechaza.
+- **`uydatos.catalogo`**: `buscar()` por texto, organización y formato, con el conteo total y los
+  facets; `datastore_search()` para consultar filas sin bajar el archivo; `accion()` para el resto
+  de la API de CKAN.
+- **`python -m uydatos <lector>`**: los subcomandos de todos los lectores en un solo lugar.
+- Guía de contribución (`CONTRIBUTING.md`), plantilla para escribir un lector nuevo y documentos de
+  medición de fuentes candidatas en `docs/`.
 
 ## 0.2.1 — 2026-10-09
 
