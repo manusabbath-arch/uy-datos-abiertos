@@ -1,5 +1,21 @@
 # Cambios
 
+## Sin publicar
+
+- **Nuevo: `uydatos.hojas`**, para leer planillas XLSX y XLS. El motor se elige por **la firma del
+  archivo** y no por el `formato` que declara el catálogo, que miente: de 24 recursos declarados
+  `XLS`, **23 son en realidad XLSX** y el único `.xls` de verdad de la muestra es el de AGESIC.
+  openpyxl tiene sus propias dos trampas —se fía de la extensión, y en modo `read_only` informa 1×1
+  cuando la hoja no declara su dimensión— y las dos quedan sorteadas. Las dependencias son
+  **opcionales** (`pip install uydatos[hojas]`), así que el paquete base sigue sin ninguna: sin el
+  extra, la suite saltea el módulo en vez de fallar.
+- **`docs/2026-10-10-hojas-medicion.md`**: la medición de las planillas del catálogo, con lo que sí
+  se puede bajar y lo que no (los `.xls` de la ECH del INE viven en el sitio viejo del INE, con el
+  certificado roto, así que leer `.xls` no la destraba por sí solo).
+- **Corregido en el README**: `uydatos.mides` no estaba en la tabla de módulos.
+
+Sumar un módulo pide **0.7.0** cuando se publique.
+
 ## 0.6.0 — 2026-10-10
 
 - **Corregido: las mesas de observados se reconocían por la serie `?ZZ`**, medida solo en 2024. En

@@ -21,6 +21,9 @@ dependencies = []
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+# Opcionales y fuera del paquete base: leer una planilla no tiene por qué engordar a quien lee una
+# serie del BCU. El error de `hojas` dice cuál falta y con qué se instala.
+hojas = ["openpyxl>=3.1", "xlrd>=2.0"]
 
 [build-system]
 requires = ["hatchling"]

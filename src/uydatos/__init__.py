@@ -20,6 +20,8 @@ Módulos:
 - `rut`          — dígito verificador de RUT y cédula uruguaya.
 - `semanas`      — semanas ISO 8601 (W1, W2...) con los bordes de año resueltos.
 - `catalogo`     — recursos del catálogo de datos abiertos de Uruguay (CKAN).
+- `mides`        — la familia de indicadores de MIDES, todos con la misma forma.
+- `hojas`        — hojas de cálculo XLSX y XLS, con el motor elegido por la firma del archivo.
 """
 
 __version__ = "0.6.0"

@@ -20,7 +20,7 @@ jobs:
           version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
           test "v$version" = "${GITHUB_REF_NAME}" || { echo "etiqueta ${GITHUB_REF_NAME} != versión $version"; exit 1; }
       - name: Tests
-        run: uv run --python 3.13 --with pytest --with-editable . pytest -q
+        run: uv run --python 3.13 --with pytest --with openpyxl --with xlrd --with-editable . pytest -q
       - name: Construir
         run: uv build && uvx twine check dist/*
       - name: Publicar en PyPI

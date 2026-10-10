@@ -12,7 +12,21 @@ from pathlib import Path
 
 import pytest
 
-from uydatos import ancap, bcu, catalogo, elecciones, ibge, ideuy, indec, inumet, limites, mides, salto_grande
+from uydatos import (
+    ancap,
+    bcu,
+    catalogo,
+    elecciones,
+    hojas,
+    ibge,
+    ideuy,
+    indec,
+    inumet,
+    limites,
+    mides,
+    red,
+    salto_grande,
+)
 from uydatos.catalogo import recursos
 
 pytestmark = pytest.mark.red
@@ -153,3 +167,36 @@ def test_balotaje_2024_mesas_comunes_y_de_observados(tmp_path):
     r = elecciones.resumen(mesas)
     assert r["mesas_comunes"] > 7000 and r["mesas_de_observados"] > 100
     assert r["en_mesas_comunes_las_opciones_excluyen_observados"]
+
+
+def test_hojas_el_unico_xls_de_verdad_de_la_muestra(tmp_path):
+    """Medido el 10/10/26: de 24 recursos declarados `XLS`, el único que es un OLE de verdad es el de
+    AGESIC. La firma lo dice sin abrir ninguna biblioteca."""
+    recurso = [r for r in recursos("agesic-encuestas-de-uso-de-tic") if (r["formato"] or "").upper() == "XLS"][0]
+    destino = tmp_path / "eutic.xls"
+    red.bajar(recurso["url"], destino)
+    assert hojas.firma(destino) == "xls"
+    assert len(hojas.leer(destino)) > 10
+
+
+def test_hojas_un_recurso_declarado_xls_que_en_realidad_es_xlsx(tmp_path):
+    """Es la trampa medida: el catálogo declara `XLS` y el archivo es un XLSX. Quien eligiera el motor
+    por el metadato —o por la extensión— se cae; por firma no, y este test lo fija."""
+    recurso = [r for r in recursos("latu-capital_humano_latu") if (r["formato"] or "").upper() == "XLS"][0]
+    destino = tmp_path / "latu.xls"
+    red.bajar(recurso["url"], destino)
+    assert hojas.firma(destino) == "xlsx"
+    assert hojas.leer(destino)
+
+
+def test_hojas_el_xlsx_de_un_indicador_de_mides(tmp_path):
+    """Medido el 10/10/26: trae la hoja `Datos` —la misma tabla que su CSV, con los números ya
+    tipados— y una hoja `Metadatos` que declara el tipo de cada columna."""
+    recurso = [r for r in recursos("mides-indicador-13198") if (r["formato"] or "").upper() == "XLSX"][0]
+    destino = tmp_path / "mides-13198.xlsx"
+    red.bajar(recurso["url"], destino)
+    assert hojas.nombres(destino) == ["Datos", "Metadatos"]
+    datos = hojas.leer(destino, "Datos")
+    assert datos[0] == ["Funciones GPS_fg", "año", "valor"]
+    assert isinstance(datos[1][2], (int, float)), "los números vienen tipados, no como texto"
+    assert hojas.leer(destino, "Metadatos")[0] == ["nombreDeAtributo", "descripcion", "tipoDeDato"]
