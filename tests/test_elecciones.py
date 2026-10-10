@@ -24,7 +24,7 @@ from uydatos.elecciones import (
 
 def _csv(tmp_path: Path, nombre: str, encabezado: str, filas: list[str]) -> Path:
     p = tmp_path / nombre
-    p.write_text("﻿" + "\n".join([encabezado, *filas]) + "\n", encoding="utf-8")
+    p.write_text("\ufeff" + "\n".join([encabezado, *filas]) + "\n", encoding="utf-8")
     return p
 
 

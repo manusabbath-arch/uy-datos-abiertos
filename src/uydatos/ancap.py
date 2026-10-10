@@ -60,7 +60,7 @@ def numero_europeo(texto: str) -> Optional[float]:
 
 
 def _limpiar_encabezado(campos: list[str]) -> list[str]:
-    return [c.replace("﻿", "").strip() for c in campos]
+    return [c.replace("\ufeff", "").strip() for c in campos]
 
 
 def leer_publicaciones(ruta: Path) -> list[dict]:
