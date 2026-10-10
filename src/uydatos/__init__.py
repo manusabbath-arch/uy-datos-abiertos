@@ -11,6 +11,7 @@ Módulos:
 - `elecciones`   — resultados de la Corte Electoral por mesa, con las mesas de observados aparte.
 - `bcu`          — cotizaciones del Banco Central del Uruguay (dólar, UI, peso argentino, real).
 - `ancap`        — precios máximos de combustibles fijados por el Poder Ejecutivo.
+- `ancap_ventas` — cantidad de ventas de combustibles por mercado, producto y mes.
 - `inia`         — clima diario de INIA Salto Grande, con normales y anomalías.
 - `salto_grande` — estaciones hidrometeorológicas de la CTM de Salto Grande.
 - `inumet`       — observaciones meteorológicas horarias de INUMET, en siete estaciones.
@@ -26,6 +27,6 @@ Módulos:
 - `hojas`        — hojas de cálculo XLSX y XLS, con el motor elegido por la firma del archivo.
 """
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"

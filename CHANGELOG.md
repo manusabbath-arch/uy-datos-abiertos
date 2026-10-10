@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 0.9.0 — 2026-10-10
 
 - **Nuevo: `uydatos.ancap_ventas`**, la cantidad de ventas de combustibles por mercado, producto y
   mes: el **denominador de mercado** que le faltaba a `uydatos.ancap`, que trae los precios. Trampas
@@ -10,9 +10,8 @@
   cinco años** y los huecos no son sólo el año en curso (2024 sin octubre, 2025 sin agosto a
   octubre); `QUEROSENO` y `QUEROSENOS` parecen el error de tipeo del otro y son de familias distintas;
   hay 6 correcciones negativas que se leen y se suman.
-- **Publicar esto pide `uydatos` 0.9.0 y mover el pin del MCP** de `>=0.8,<0.9` a `>=0.9,<0.10`
-  antes de que una herramienta del servidor use `ancap_ventas`: con el pin viejo, el MCP resuelve
-  la 0.8.0 y el módulo no está.
+- `mcp-uruguay` 0.8.0 mueve su pin a `>=0.9,<0.10` y usa `ancap_ventas` en la herramienta
+  `ventas_combustible`: con el pin viejo el servidor resolvía la 0.8.0, que no trae el módulo.
 - **La ECH del INE no es alcanzable desde el catálogo.** Sus siete datasets declaran 25 recursos
   contra `www.ine.gub.uy`, y **los 25 devuelven HTML** —la portada del sitio nuevo, con el `uuid`
   conservado como consulta—, no un archivo (medido el 10/10/26). No es un certificado roto ni un host
