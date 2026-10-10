@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from uydatos import ancap, bcu, catalogo, ibge, indec, inumet, salto_grande
+from uydatos import ancap, bcu, catalogo, ibge, indec, inumet, mides, salto_grande
 from uydatos.catalogo import recursos
 
 pytestmark = pytest.mark.red
@@ -99,3 +99,19 @@ def test_el_datastore_de_inumet_se_puede_consultar_sin_bajar_el_archivo():
     r = catalogo.datastore_search("f800fc53-556b-4d1c-8bd6-28b41f9cf146", limite=2)
     assert r["total"] == 332071
     assert "temp_aire" in r["campos"]
+
+
+def test_la_familia_de_mides_tiene_mil_ochocientos_sesenta_y_nueve_indicadores():
+    """Medido el 2026-10-09: la organizacion declara 1.875 datasets y 1.869 son de la familia."""
+    r = mides.indicadores(filas=100)
+    assert r["total"] == 1875
+    assert all(d["nombre"].startswith("mides-indicador-") for d in r["indicadores"])
+
+
+def test_un_indicador_de_mides_se_baja_y_se_lee(tmp_path):
+    """Medido el 2026-10-09: el 10745 tiene dos filas y sus columnas son `año, valor`."""
+    ruta = mides.descargar("10745", tmp_path / "mides-10745.csv")
+    s = mides.resumen(ruta)
+    assert s["columnas"] == ["año", "valor"]
+    assert s["filas"] == 2
+    assert s["filas_en_blanco"] == 0

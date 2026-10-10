@@ -14,6 +14,13 @@
   del Sol» y el archivo trae **4 valores por encima de 24 de 3.437** (Salto 63,2; Artigas 38,0;
   Mercedes 37,6; Colonia 33,2), tres el 01/08/2026. No se corrigen ni se descartan: `heliofania`
   no lleva rango a propósito, porque un (0, 24) rechazaría el archivo entero.
+- **Nuevo: `uydatos.mides`**, el lector de familia de los **1.869 indicadores de MIDES** —el 69% del
+  catálogo—. La forma es una sola: cero o más columnas de dimensión de **nombre libre**, y siempre
+  `año` y `valor` al final, en ese orden (49 de 49 en una muestra de 50; 25 archivos enteros sin una
+  sola fila torcida ni una celda vacía). No hace falta declarar columnas por indicador. La trampa
+  es la codificación: los CSV vienen en **cp1252**, y leerlos como UTF-8 no falla, convierte `año` en
+  `aÃ±o` — el lector rechaza el encabezado que no cierra en `año, valor`, que es el detector.
+  Ver `docs/2026-10-09-mides-medicion.md`.
 - La versión sube a 0.3.0 y **`mcp-uruguay` tiene el pin `uydatos>=0.2.1,<0.3`**: hay que moverlo
   antes de publicar esta versión, o el servidor MCP no la va a poder usar.
 

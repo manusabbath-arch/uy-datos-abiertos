@@ -147,7 +147,7 @@ hace falta una declaración de columnas por indicador. El lector que la forma ad
 Queda como medición, no como promesa: estos son **cinco de 1.840** CSV. La forma se comparte en la
 muestra que se eligió por tema; el lector de familia tiene que probarse contra una tanda más ancha
 antes de darla por cierta (y un indicador que no cierre las dos últimas columnas en `año,valor` es
-el caso que hay que buscar).
+el caso que hay que buscar). **Ya se probó contra una tanda ancha: ver §9.**
 
 ## 7. Fuentes, fecha y sha256 de lo bajado
 
@@ -166,3 +166,29 @@ medición (`elegir.py`, `medir.py`) también vive ahí, no en el repo.
 **Sin archivo, citando la respuesta de la API con su fecha:** el `total` y los `formatos` de
 `catalogo.buscar` (§1); los recursos, sus URLs y sus ids por `package_show` (§1 y §4); y los
 `total`, `campos` y primeras filas del datastore (§4).
+
+## 9. La muestra ancha, el mismo día
+
+Los cinco de arriba no alcanzaban para confiar en una forma que abarca 1.869 archivos. Se midió
+ancho, el mismo 2026-10-09:
+
+- **La familia son 1.869 indicadores** de los 1.875 datasets que declara la organización `mides`,
+  numerados del 2718 al 14093. Los seis que no son: cuatro encuestas ENDIS y dos paneles.
+- **La forma se sostiene.** De una muestra de 50 (uno cada cinco de las tres primeras páginas de la
+  búsqueda), 49 tienen datastore y **los 49 terminan exactamente en `año, valor`**; el que no lo
+  tiene es una encuesta ENDIS, que ni responde en el datastore.
+- **El datastore sirve de atajo para ver la forma**, pero la fuente de verdad es el archivo: de diez
+  CSV bajados por tamaño, **diez tienen el encabezado idéntico** a los campos que declara el
+  datastore, sin contar el `_id` que agrega CKAN.
+- **Lo de adentro también se sostiene.** 25 archivos bajados enteros: 2.215 filas, **cero** filas
+  torcidas, **cero** repetidas, **cero** celdas vacías, `valor` siempre numérico (1.939 con
+  decimales) y `año` siempre de cuatro dígitos.
+- **Todos los CSV vienen en cp1252**, delimitador `,`, sin BOM. Leerlos como UTF-8 no falla:
+  convierte `año` en `aÃ±o`, que es peor, porque el lector sigue leyendo. Por eso el lector
+  **rechaza el archivo si las dos últimas columnas no son `año` y `valor`**, y eso es también el
+  detector de la codificación mal puesta.
+- Cada indicador tiene **un solo CSV** (49 de 49).
+
+Con esto el veredicto de §5 deja de ser una conjetura sobre cinco archivos: **la familia comparte
+forma y el lector de familia es viable**. Está en `src/uydatos/mides.py`, con su CLI
+(`python -m uydatos.mides listar | bajar | ver`) y su resumen sellado con el sha256 del archivo.
