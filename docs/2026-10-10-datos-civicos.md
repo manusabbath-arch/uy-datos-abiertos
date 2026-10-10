@@ -48,10 +48,13 @@ puede llevar al mapa y al departamento.
 1. **Los votos observados se cuentan en otras mesas.** En cada una de las **7.234 mesas comunes**
    —el mismo número de circuitos del escrutinio primario—, candidatos + anulados + en blanco =
    `TotalVotosNoObservados`: los observados no están. Se escrutan después en **mesas de observados**
-   (118 en las nacionales 2024, 114 en el balotaje): serie terminada en `ZZ`, **0 habilitados y 0
-   emitidos**, y unos 255 votos cada una. En el balotaje, las comunes declaran 35.753 observados y
-   las especiales escrutan 35.539; en las nacionales, 34.587 y 34.422. La diferencia (214 y 165)
-   serían observados anulados al escrutarlos, **a confirmar con la Corte**.
+   (118 en las nacionales 2024, 114 en el balotaje, 199 en las departamentales 2025): **0
+   habilitados y 0 emitidos**, y unos 250 a 340 votos cada una. **La serie no sirve para
+   reconocerlas**: en 2024 termina en `ZZ` y en Montevideo 2025 es `A1` o `A2` (la primera versión
+   del lector usó la serie y en 2025 las contaba como comunes). Lo declarado como observado en las
+   comunes y lo escrutado en las especiales: 35.753 y 35.539 en el balotaje, 34.587 y 34.422 en las
+   nacionales, 34.415 y 34.168 en las departamentales. La diferencia (0,48% a 0,72%, siempre la
+   mayor en Montevideo) serían observados anulados al escrutarlos, **a confirmar con la Corte**.
    - **Sumar todas las mesas da el escrutinio definitivo.**
    - **Sumar solo las comunes** —que es lo que hace cualquier mapa por circuito, por localidad o
      por local— **deja afuera los observados**, que no tienen localidad. Un mapa por barrio nunca

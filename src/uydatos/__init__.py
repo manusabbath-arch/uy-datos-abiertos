@@ -22,6 +22,6 @@ Módulos:
 - `catalogo`     — recursos del catálogo de datos abiertos de Uruguay (CKAN).
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"

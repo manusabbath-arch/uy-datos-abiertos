@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.6.0 — 2026-10-10
+
+- **Corregido: las mesas de observados se reconocían por la serie `?ZZ`**, medida solo en 2024. En
+  Montevideo 2025 la serie es `A1` o `A2`, así que esas mesas se contaban como comunes (los totales no
+  cambiaban; la clasificación y el filtro sí). Ahora se reconocen por **0 habilitados y 0 emitidos**,
+  verificado en las tres elecciones: 118, 114 y 199 mesas, con lo declarado y lo escrutado a menos de
+  0,72%.
+- **Cambia la API de `votos_por_lema`**: `incluir_observados` se reemplaza por
+  `excluir=mesas_de_observados(totales)`, porque el desglose no trae habilitados ni emitidos.
+
 ## 0.5.0 — 2026-10-10
 
 - **Nuevo: `uydatos.elecciones`**, los resultados de la Corte Electoral por mesa: totales, votos

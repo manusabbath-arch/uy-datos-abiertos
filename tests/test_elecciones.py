@@ -16,6 +16,7 @@ from uydatos.elecciones import (
     leer_desglose,
     leer_plan,
     leer_totales,
+    mesas_de_observados,
     normalizar_lema,
     resumen,
     votos_por_lema,
@@ -75,14 +76,26 @@ class TestTotales:
 
 class TestObservados:
     """En cada mesa común los votos por opción excluyen los observados; los observados se escrutan
-    en mesas especiales (serie `?ZZ`, 0 habilitados y 0 emitidos). Medido en el balotaje 2024: 7.234
-    mesas comunes y 114 de observados."""
+    en mesas especiales, sin habilitados ni emitidos propios. Medido: 118 en las nacionales 2024, 114
+    en el balotaje y 199 en las departamentales 2025. La serie **no** sirve para reconocerlas: en 2024
+    termina en `ZZ`, en Montevideo 2025 es `A1` o `A2`."""
 
     FILAS = ["MO,1,AAA,397,317,313,4,10,2,147,154", "MO,9001,BZZ,0,0,4,0,0,0,3,1"]
 
     def test_la_mesa_de_observados_se_reconoce(self, tmp_path):
         comun, especial = leer_totales(_csv(tmp_path, "b.csv", BALOTAJE, self.FILAS))
         assert (comun["tipo"], especial["tipo"]) == ("comun", "observados")
+
+    def test_tambien_con_la_serie_de_montevideo_2025(self, tmp_path):
+        p = _csv(tmp_path, "t.csv", TOTALES_2025, ["MO,B,1,AAA,395,291,287,4,3,9,7", "MO,B,9001,A1,0,0,339,0,5,10,0"])
+        comun, especial = leer_totales(p)
+        assert (comun["tipo"], especial["tipo"]) == ("comun", "observados")
+
+    def test_una_mesa_sin_habilitados_pero_con_emitidos_es_comun(self, tmp_path):
+        """Las 9 mesas de frontera de 2024: 0 habilitados, todo voto observado. No son de escrutinio."""
+        p = _csv(tmp_path, "t.csv", TOTALES_2024, ["TT,135,FCB,0,182,0,182,0,0,0,0,0"])
+        (m,) = leer_totales(p)
+        assert m["tipo"] == "comun"
 
     def test_el_resumen_suma_las_dos_y_lo_declara(self, tmp_path):
         r = resumen(leer_totales(_csv(tmp_path, "b.csv", BALOTAJE, self.FILAS)))
@@ -128,10 +141,14 @@ class TestDesglose:
 
     def test_las_mesas_de_observados_se_pueden_dejar_afuera(self, tmp_path):
         """Lo repartible por circuito o localidad: sin las mesas de observados, que no tienen localidad."""
-        filas = ["HOJA_EN,MO,1,AAA,Partido Frente Amplio,609,100", "HOJA_EN,MO,9001,BZZ,Partido Frente Amplio,609,7"]
+        filas = ["HOJA_EN,MO,1,AAA,Partido Frente Amplio,609,100", "HOJA_EN,MO,9001,A1,Partido Frente Amplio,609,7"]
         desglose = leer_desglose(_csv(tmp_path, "d.csv", DESGLOSE_2024, filas))
+        totales = leer_totales(
+            _csv(tmp_path, "t.csv", BALOTAJE, ["MO,1,AAA,397,317,313,4,10,2,147,154", "MO,9001,A1,0,0,4,0,0,0,3,1"])
+        )
+        assert mesas_de_observados(totales) == {("MO", 9001)}
         assert votos_por_lema(desglose, "nacional")[0]["votos"] == 107
-        assert votos_por_lema(desglose, "nacional", incluir_observados=False)[0]["votos"] == 100
+        assert votos_por_lema(desglose, "nacional", excluir=mesas_de_observados(totales))[0]["votos"] == 100
 
     def test_columnas_en_mayusculas_de_2025_y_niveles(self, tmp_path):
         p = _csv(

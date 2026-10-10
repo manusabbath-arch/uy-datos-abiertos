@@ -9,10 +9,12 @@ Las trampas, medidas el 10/10/2026
 ---------------------------------
 1. **Los observados se cuentan en mesas especiales.** En cada mesa común, los votos por opción
    excluyen los observados (balotaje 2024: opciones + anulados + en blanco = no observados en las
-   7.234 mesas comunes). Los observados se escrutan después en **mesas de observados**: serie
-   terminada en `ZZ`, 0 habilitados y 0 emitidos (118 en 2024). **Sumar todas las mesas da el
-   escrutinio definitivo**; sumar solo las comunes —lo que hace cualquier mapa por circuito o por
-   localidad— deja afuera los observados, que no tienen localidad. Cada mesa lleva su `tipo`.
+   7.234 mesas comunes). Los observados se escrutan después en **mesas de observados**, que se
+   reconocen por **0 habilitados y 0 emitidos** (118 en las nacionales 2024, 114 en el balotaje, 199 en
+   las departamentales 2025). **No por la serie**: en 2024 termina en `ZZ`, en Montevideo 2025 es `A1`
+   o `A2`. **Sumar todas las mesas da el escrutinio definitivo**; sumar solo las comunes —lo que hace
+   cualquier mapa por circuito o por localidad— deja afuera los observados, que no tienen localidad.
+   Cada mesa lleva su `tipo`.
 2. **Hay mesas comunes con más emitidos que habilitados** (quien vota observado fuera de su
    circuito). Se cuentan en `controles`, no se corrigen.
 3. **El voto a un partido es hoja + lema** (`HOJA_*` + `VOTO_LEMA*`): `votos_por_lema()` suma los dos.
@@ -191,7 +193,7 @@ def leer_totales(ruta: Path) -> list[dict]:
         m.setdefault("municipio", None)
         for c in _NUMERICAS:
             m.setdefault(c, 0)
-        especial = es_mesa_de_observados(m.get("serie", ""), m["habilitados"], m["emitidos"])
+        especial = es_mesa_de_observados(m["habilitados"], m["emitidos"])
         m["tipo"] = "observados" if especial else "comun"
         clave = (m["codigo_departamento"], m["crv"])
         if clave in vistas:
@@ -201,10 +203,19 @@ def leer_totales(ruta: Path) -> list[dict]:
     return mesas
 
 
-def es_mesa_de_observados(serie: str, habilitados: int, emitidos: int) -> bool:
-    """Las mesas donde se escrutan los votos observados: serie terminada en `ZZ`, sin habilitados
-    ni emitidos propios (medido en las 118 de 2024)."""
-    return serie.strip().upper().endswith("ZZ") and habilitados == 0 and emitidos == 0
+def es_mesa_de_observados(habilitados: int, emitidos: int) -> bool:
+    """Las mesas donde se escrutan los votos observados: sin habilitados ni emitidos propios.
+
+    Medido el 10/10/2026 en las tres elecciones, sin falsos positivos: lo declarado como observado en
+    las mesas comunes y lo escrutado en estas difiere entre 0,48% y 0,72%. Una mesa sin habilitados
+    pero **con** emitidos (las 9 de frontera de 2024, donde todo voto es observado) es común."""
+    return habilitados == 0 and emitidos == 0
+
+
+def mesas_de_observados(mesas: list[dict]) -> set[tuple[str, int]]:
+    """Las mesas de observados de unos totales, como `(codigo_departamento, crv)`: para pasarle a
+    `votos_por_lema(excluir=...)`, porque el desglose no trae habilitados ni emitidos."""
+    return {(m["codigo_departamento"], m["crv"]) for m in mesas if m["tipo"] == "observados"}
 
 
 def resumen(mesas: list[dict], departamento: str = "") -> dict:
@@ -261,7 +272,6 @@ def leer_desglose(ruta: Path) -> list[dict]:
     if len(i) < 6:
         raise EleccionesInvalido(f"{ruta.name}: no parece un desglose de votos (columnas {columnas})")
     i_mun = columnas.index("descripcion2") if "descripcion2" in columnas else None
-    i_serie = next((columnas.index(c) for c in ("series", "serie") if c in columnas), None)
     out = []
     for n, fila in enumerate(filas, start=2):
         donde = f"{ruta.name} fila {n}"
@@ -282,7 +292,6 @@ def leer_desglose(ruta: Path) -> list[dict]:
                 "lema": fila[i["lema"]].strip(),
                 "hoja": fila[i["descripcion1"]].strip(),
                 "municipio": _municipio(fila[i_mun]) if i_mun is not None else None,
-                "mesa_de_observados": i_serie is not None and fila[i_serie].strip().upper().endswith("ZZ"),
                 "votos": _entero(fila[i["cantidadvotos"]], donde),
             }
         )
@@ -290,12 +299,12 @@ def leer_desglose(ruta: Path) -> list[dict]:
 
 
 def votos_por_lema(
-    desglose: list[dict], nivel: str, departamento: str = "", incluir_observados: bool = True
+    desglose: list[dict], nivel: str, departamento: str = "", excluir: Optional[set[tuple[str, int]]] = None
 ) -> list[dict]:
     """Votos por partido (hoja + lema) en un nivel, ordenados de mayor a menor.
 
-    Con `incluir_observados` (por defecto) suma también las mesas de observados: es el escrutinio
-    definitivo. Sin ellas da lo que se puede repartir por circuito o localidad."""
+    Por defecto suma todas las mesas, también las de observados: es el escrutinio definitivo. Con
+    `excluir=mesas_de_observados(totales)` da lo que se puede repartir por circuito o localidad."""
     if nivel not in ("nacional", "departamental", "municipal"):
         raise EleccionesInvalido(f"nivel {nivel!r}: nacional, departamental o municipal")
     d = _sin_tildes(departamento) if departamento else ""
@@ -303,7 +312,7 @@ def votos_por_lema(
     for f in desglose:
         if f["nivel"] != nivel or (d and d not in (f["departamento"], f["codigo_departamento"])):
             continue
-        if not incluir_observados and f["mesa_de_observados"]:
+        if excluir and (f["codigo_departamento"], f["crv"]) in excluir:
             continue
         por[f["lema"]]["por_hoja" if f["clase"] == "hoja" else "al_lema"] += f["votos"]
     filas = [{"lema": lema, "votos": v["por_hoja"] + v["al_lema"], **v} for lema, v in por.items()]
