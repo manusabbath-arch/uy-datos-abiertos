@@ -2,6 +2,11 @@
 
 ## 0.3.0 — sin publicar
 
+- **Nuevo en `uydatos.salto_grande`: las lecturas** (`DatosHidrometeorologicos`) de altura, lluvia
+  y caudal cada 15 minutos, con `tramos()`, `resumen_diario()` y `cobertura()`. Trampas medidas el
+  10/10/2026: `-999` es sin dato, una fecha en otro formato devuelve cero lecturas sin error,
+  `fechaHasta` es las 00:00 y no el día entero, más de 31 días es un SOAP Fault y hay huecos.
+
 - **Nuevo: `uydatos.inumet`**, las observaciones meteorológicas horarias de INUMET en siete
   estaciones del país (temperatura, precipitación puntual, humedad, viento, presión y
   insolación). Rechaza la fila cuyo `estacion_id` trae el texto de un error del servidor
