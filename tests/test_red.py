@@ -45,3 +45,19 @@ def test_ancap_csv(tmp_path):
 
 def test_catalogo_inia_tiene_csv_anuales():
     assert any("ppt_tmax_tmin_sg_" in r["url"] for r in recursos("inia-precipitacion-temps-extremas-sg"))
+
+
+def test_ideuy_edificio_publico_calle_inexistente_y_esquina():
+    import time
+
+    from uydatos import ideuy
+
+    r = ideuy.geocodificar("Avenida 18 de Julio 1360", "Montevideo", "Montevideo")  # Intendencia de Montevideo
+    assert r["calidad"] == "puerta_exacta" and r["dentro_de_uruguay"]
+    time.sleep(1)
+    assert ideuy.geocodificar("Calle que no existe 123", "Montevideo", "Montevideo")["calidad"] == "calle_distinta"
+    time.sleep(1)
+    assert ideuy.geocodificar("18 de Julio y Ejido", "Montevideo", "Montevideo")["calidad"] in (
+        "esquina",
+        "calle_sin_numero",
+    )

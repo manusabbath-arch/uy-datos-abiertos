@@ -17,6 +17,7 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 | `uydatos.salto_grande` | Comisión Técnica Mixta de Salto Grande (SOAP) | Estaciones hidrometeorológicas de la cuenca del río Uruguay | El arreglo SOAP encoded se llama `item`: buscar `Estacion` da lista vacía sin error. |
 | `uydatos.indec` | API de series de datos.gob.ar | IPC nacional de Argentina, base dic-2016 | La API sigue sirviendo las bases 2003 y 2008, discontinuadas. |
 | `uydatos.ibge` | API SIDRA del IBGE | IPCA de Brasil, número-índice | La tabla trae varias variables; una variación leída como índice no da error. |
+| `uydatos.ideuy` | IDE.uy (direcciones.ide.uy) | Coordenadas de una dirección o esquina, con su calidad | Ante lo que no encuentra devuelve el centro de la localidad, una puerta vecina u otra calle, sin error. |
 | `uydatos.rut` | Offline | Dígito verificador de RUT y cédula | Excel convierte el RUT en float y se come el cero inicial. |
 | `uydatos.semanas` | Offline | Semanas ISO 8601 (`W41`) | El 01/01/2027 es la `2026-W53`. |
 | `uydatos.catalogo` | catalogodatos.gub.uy (CKAN) | URLs vigentes de los recursos de un dataset | Las URLs de descarga cambian cuando el organismo resube un archivo. |
@@ -67,6 +68,7 @@ python -m uydatos.salto_grande cerca datos/estaciones.xml -31.383 -57.960
 python -m uydatos.indec bajar datos/ipc_ar.json
 python -m uydatos.ibge bajar datos/ipca.json
 python -m uydatos.catalogo inia-precipitacion-temps-extremas-sg
+python -m uydatos.ideuy "Avenida 18 de Julio 1360" --localidad Montevideo --departamento Montevideo
 ```
 
 ## Lo que estos lectores se niegan a hacer
