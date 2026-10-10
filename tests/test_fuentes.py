@@ -54,7 +54,9 @@ def test_inumet_los_seis_datasets_declaran_un_solo_csv():
     poder elegir cuál es el bueno: mejor enterarse acá y no en la corrida de alguien."""
     for nombre, (dataset, _, _) in inumet.DATASETS.items():
         nombres = [Path(r["url"].split("?")[0]).name for r in recursos(dataset)]
-        assert len([n for n in nombres if n.startswith("inumet_")]) == 1, f"{nombre}: {nombres}"
+        # El catálogo publica el mismo dato en CSV, XML y XLSX (medido el 10/10/2026): lo que tiene que
+        # ser único es el CSV, que es el que elige `descargar()` con el mismo patrón.
+        assert len([n for n in nombres if inumet._ARCHIVO.match(n)]) == 1, f"{nombre}: {nombres}"
 
 
 def test_inumet_temperatura_contrato(tmp_path):
