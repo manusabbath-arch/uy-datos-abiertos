@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.5.0 — 2026-10-10
+
+- **Nuevo: `uydatos.elecciones`**, los resultados de la Corte Electoral por mesa: totales, votos
+  por partido (hoja + lema) y plan circuital, de las nacionales 2024, el balotaje 2024 y las
+  departamentales 2025. Trampas medidas: los observados se escrutan en **mesas especiales** (serie
+  `?ZZ`, 0 habilitados y 0 emitidos) y no tienen localidad; los nombres de columnas, partidos y
+  tipos de circuito cambian entre elecciones; el departamento viene en un código propio; la columna
+  del local termina en espacio. **No lee la integración de las hojas**, que trae la credencial
+  cívica de cada candidato.
+- **`docs/2026-10-10-datos-civicos.md`**: el análisis de los datos cívicos —elecciones, Parlamento,
+  compras del Estado— con las trampas y los datos personales de cada uno.
+
 ## 0.4.0 — 2026-10-10
 
 - **Nuevo: `uydatos.limites`**: los límites del INE —departamentos (vía la IDE) y las 652

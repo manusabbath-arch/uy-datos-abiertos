@@ -9,6 +9,7 @@ su fecha no se cita.
 |---|---|
 | `2026-10-09-fuentes-candidatas.md` | qué fuentes externas ya probadas se aplican a este paquete, con los numeros medidos por HTTP contra el catalogo |
 | `2026-10-09-mides-medicion.md` | la forma de cinco indicadores de MIDES, medidos antes de escribir el lector de la familia |
+| `2026-10-10-datos-civicos.md` | elecciones, Parlamento y compras del Estado: qué hay, las trampas medidas, los datos personales y por dónde empezar |
 
 ## El metodo
 

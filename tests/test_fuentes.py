@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from uydatos import ancap, bcu, catalogo, ibge, ideuy, indec, inumet, limites, mides, salto_grande
+from uydatos import ancap, bcu, catalogo, elecciones, ibge, ideuy, indec, inumet, limites, mides, salto_grande
 from uydatos.catalogo import recursos
 
 pytestmark = pytest.mark.red
@@ -146,3 +146,10 @@ def test_inversa_ordena_por_distancia():
 
 def test_buscar_geojson_no_da_cero():
     assert catalogo.buscar("", formato="geojson", filas=1)["total"] > 0
+
+
+def test_balotaje_2024_mesas_comunes_y_de_observados(tmp_path):
+    mesas = elecciones.leer_totales(elecciones.descargar("balotaje-2024", "totales", tmp_path / "b.csv"))
+    r = elecciones.resumen(mesas)
+    assert r["mesas_comunes"] > 7000 and r["mesas_de_observados"] > 100
+    assert r["en_mesas_comunes_las_opciones_excluyen_observados"]

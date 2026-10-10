@@ -7,6 +7,7 @@ serie creíble pero falsa. La única función de cada módulo que sale a interne
 
 Módulos:
 
+- `elecciones`   — resultados de la Corte Electoral por mesa, con las mesas de observados aparte.
 - `bcu`          — cotizaciones del Banco Central del Uruguay (dólar, UI, peso argentino, real).
 - `ancap`        — precios máximos de combustibles fijados por el Poder Ejecutivo.
 - `inia`         — clima diario de INIA Salto Grande, con normales y anomalías.
@@ -21,6 +22,6 @@ Módulos:
 - `catalogo`     — recursos del catálogo de datos abiertos de Uruguay (CKAN).
 """
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"
