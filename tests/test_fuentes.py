@@ -15,6 +15,7 @@ import pytest
 
 from uydatos import (
     ancap,
+    ancap_ventas,
     bcu,
     catalogo,
     compras,
@@ -265,3 +266,17 @@ def test_los_recursos_de_la_ech_no_bajan_un_archivo():
         f"el catálogo movió los archivos de la ECH a otro host: {sorted(hosts)}. "
         "Si es su propio host, la ECH es alcanzable: escribir el lector"
     )
+
+
+def test_ancap_ventas_el_csv_del_catalogo(tmp_path):
+    """Medido el 10/10/26: 1.200 filas, las dos unidades, y el mercado INTERNO es el 81% de los m³.
+
+    `Toneladas` son sólo los combustibles sólidos del mercado interno, así que sigue habiendo dos
+    unidades: el día que sea una sola, este test lo dice (y el resumen cambia de forma).
+    """
+    r = ancap_ventas.resumen(ancap_ventas.leer(ancap_ventas.descargar(tmp_path / "v.csv")))
+    assert r["filas"] > 1000
+    assert set(r["unidades"]) == {"Miles de m3", "Toneladas"}
+    por_mercado = {m: u.get("Miles de m3", 0) for m, u in r["por_mercado"].items()}
+    assert max(por_mercado, key=por_mercado.get) == "INTERNO"
+    assert any(c["faltan"] for c in r["cobertura"].values()), "la ventana móvil dejó un año completo"

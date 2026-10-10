@@ -14,6 +14,7 @@ from typing import Optional, Sequence
 
 from uydatos import (
     ancap,
+    ancap_ventas,
     bcu,
     catalogo,
     compras,
@@ -33,6 +34,7 @@ from uydatos import (
 
 LECTORES = {
     "ancap": ancap,
+    "ancap_ventas": ancap_ventas,
     "bcu": bcu,
     "catalogo": catalogo,
     "compras": compras,

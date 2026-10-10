@@ -24,6 +24,7 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 |---|---|---|---|
 | `uydatos.bcu` | Banco Central del Uruguay (web service SOAP) | Dólar, Unidad Indexada, peso argentino, real | Una respuesta de error se guarda igual y parece un mes sin cotización. |
 | `uydatos.ancap` | ANCAP, catálogo de datos abiertos | Precio máximo al público de combustibles | Las columnas `Unidad` y `Valor` vienen invertidas, y el archivo apila publicaciones. |
+| `uydatos.ancap_ventas` | ANCAP, catálogo de datos abiertos | Cantidad de ventas de combustibles por mercado, producto y mes: el denominador de mercado | La columna `Unidad` **mezcla miles de m³ con toneladas**, y el archivo es una ventana móvil de cinco años con huecos en el medio, no sólo al final. |
 | `uydatos.inia` | INIA, estación Salto Grande | Lluvia y temperaturas diarias desde 1970, normales y anomalías | El día va de 9:00 a 9:00; un vacío es nulo, no cero. |
 | `uydatos.inumet` | INUMET, red nacional | Observaciones horarias de temperatura, lluvia, humedad, viento y presión en siete estaciones del país | La columna `estacion_id` trae el nombre y **puede traer el texto de un error del servidor**; la hora es UTC, no local. |
 | `uydatos.salto_grande` | Comisión Técnica Mixta de Salto Grande (SOAP) | Estaciones hidrometeorológicas de la cuenca del río Uruguay | El arreglo SOAP encoded se llama `item`: buscar `Estacion` da lista vacía sin error. |
