@@ -142,11 +142,28 @@ medición de hace cinco días que hoy no se sostiene. `uydatos.catalogo` solo us
 que es lo que se midió sano en las dos fechas.
 
 **La trampa hermana, esa sí viva:** el catálogo publica datasets cuyos recursos apuntan a URLs
-**ajenas que se caen**. Las cinco ECH del INE (`ine-encuesta-continua-de-hogares-*`, 2012–2017)
-listan sus microdatos como `.RAR` contra `ine.gub.uy/c/document_library/get_file?...`, **sin
-tamaño declarado**, con `CC0 1.0`. No se probaron: si alguno de esos enlaces responde, la ECH
-—el nivel socioeconómico por zona, hoy dado por inaccesible— cambia de estado. Es una prueba de
-una línea y queda como pendiente declarado, no como conclusión.
+**ajenas que se caen**. Los siete datasets de la ECH del INE (`ine-ech2011` y
+`ine-encuesta-continua-de-hogares-*`, 2012–2017) declaran **25 recursos** —7 XLS, 7 RAR, 10 PDF y 1
+DOCX—, todos contra `www.ine.gub.uy/c/document_library/get_file?...`, **sin tamaño declarado**, con
+`CC0 1.0`.
+
+**Probados los 25 el 10/10/26: los 25 devuelven HTML.** No un archivo: la portada del sitio nuevo del
+INE (`https://www.gub.uy/instituto-nacional-estadistica/`), **con el `uuid` conservado como consulta**
+—la firma de una migración que se dejó atrás los documentos viejos—. Ninguno bajó un XLS, un RAR ni un
+PDF. El host está vivo (`179.27.170.201`, puertos 80 y 443 contestan): **no es un enlace lento ni un
+certificado roto, es link rot**, y tanto el `formato` declarado como la ausencia de `tamaño` mienten
+sobre estos 25 recursos.
+
+Consecuencia: **la ECH no cambia de estado** por esta vía; el nivel socioeconómico por zona sigue
+inaccesible desde el catálogo. Lo que sí queda es la guarda
+(`test_los_recursos_de_la_ech_no_bajan_un_archivo`, marcada `red`), que falla el día que alguno de los
+25 vuelva a entregar un archivo: esa es la señal para escribir el lector. La vía que quedaría viva no
+es el catálogo sino el sitio nuevo del INE, que no se sirve por una URL de `c/document_library`.
+
+Detalle medido de paso: el host viejo tiene además la **cadena TLS incompleta** (`*.ine.gub.uy`
+verifica con error 21, «unable to verify the first certificate»), así que el mismo pedido a veces
+falla por certificado y a veces redirige. Por eso la guarda cuenta las dos cosas como «no baja un
+archivo», en vez de exigir que el fallo sea de una sola forma.
 
 ## 5. Orden propuesto
 
@@ -154,7 +171,7 @@ una línea y queda como pendiente declarado, no como conclusión.
 |---|---|---|---|---|
 | 1 | **INUMET** (6 variables) | **hecho** en 0.3.0 | clima en siete estaciones del país, no una | cuatro variables medidas sólo en su encabezado |
 | 2 | **Sanciones DSS** | pendiente | el enforcement del SIPC, y un lector público | PII de terceros; se corta en 2024 |
-| 3 | **Probar las URLs del INE (ECH)** | pendiente, 1 línea | el nivel socioeconómico por zona | puede dar 404: es lo que hay que ver |
+| 3 | **Las URLs del INE (ECH)** | **medido 10/10/26**: enlaces muertos | el nivel socioeconómico por zona —**sigue inaccesible**— | los 25 recursos redirigen a la portada del sitio nuevo |
 | 4 | **ANCAP cantidad de ventas** | pendiente | el denominador de mercado del combustible | sin consumidor todavía |
 | 5 | **SIPC precios (serie)** | diferido con gate | la serie de precios minoristas | 1 a 2 GB por año |
 

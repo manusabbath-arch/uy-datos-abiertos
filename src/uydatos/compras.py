@@ -13,22 +13,22 @@ Las trampas, medidas el 10/10/2026 sobre 2024 y 2025
 3. **El importe es el precio unitario, no el total**: el total es cantidad × precio, y 222.616 ítems
    de 2025 tienen cantidad distinta de 1. Ninguna adjudicación trae un total; los únicos totales
    del archivo son los montos **estimados** de los llamados.
-8. **El total del año está dominado por registros imposibles.** Un solo ítem de UTE («colocación de
+4. **El total del año está dominado por registros imposibles.** Un solo ítem de UTE («colocación de
    alambrado de ley 7 hilos», 850.000 × 461.611) es el **77%** de lo adjudicado en pesos en 2024;
    otro («suministro, obra civil, montaje…», 798.848,2 × 88.760,8) el **53%** en 2025. Hay ítems con
    el monto en la cantidad y precio 1, y unidades «%». No se corrigen ni se descartan —no se sabe cuál
    es el valor real—: `resumen()` devuelve siempre los mayores ítems con su peso y su `ocid`, y la
    concentración. **Un total de este archivo no se cita sin mirarlos.**
-4. **El archivo de adjudicaciones trae también llamados (1.005 en 2025) y anulaciones (3.146).**
+5. **El archivo de adjudicaciones trae también llamados (1.005 en 2025) y anulaciones (3.146).**
    No son compras. Las anulaciones **no** apuntan a una adjudicación publicada (ninguna comparte
    `ocid` con una, ni en 2024 ni en 2025): son procedimientos que terminaron sin adjudicar.
-5. **Las adjudicaciones tienen estado**: solo las `active` son gasto. En 2025 hay además 360
+6. **Las adjudicaciones tienen estado**: solo las `active` son gasto. En 2025 hay además 360
    `cancelled`, 110 `unsuccessful` y 8 `pending`.
-6. **Las monedas están mezcladas**: pesos, dólares, euros, Unidades Indexadas (`UYI`), reales,
+7. **Las monedas están mezcladas**: pesos, dólares, euros, Unidades Indexadas (`UYI`), reales,
    francos suizos, rands, y 11.221 ítems de 2025 sin moneda. Cada moneda se suma aparte;
    `convertir()` las lleva a pesos con una cotización que le da quien llama.
-7. **Hay adjudicaciones sin el campo `buyer`**: el comprador sale de `parties`. Algunas no lo traen
-   en ningún lado (96 en 2024, 53 en 2025) y otras no traen proveedor (4.151 en 2025): se leen, se
+8. **Hay adjudicaciones sin el campo `buyer`**: el comprador sale de `parties`. Algunas no lo traen
+   en ningún lugar (96 en 2024, 53 en 2025) y otras no traen proveedor (4.151 en 2025): se leen, se
    suman y se cuentan aparte, en vez de rechazar el año entero por unos registros.
 
 Sobre los proveedores: las adjudicaciones traen nombre e identificación de cada proveedor, que puede

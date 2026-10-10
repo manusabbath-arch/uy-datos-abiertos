@@ -9,6 +9,7 @@ no para validar la lógica: eso lo hacen los demás tests, sin red.
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 
@@ -216,3 +217,51 @@ def test_parlamento_senado_actual_y_leyes(tmp_path):
     assert len(asis) > 31
     leyes = parlamento.leer_leyes(parlamento.descargar("leyes", tmp_path / "l.csv"))
     assert len(leyes["leyes"]) > 4700 and leyes["faltantes"] == []
+
+
+def test_los_recursos_de_la_ech_no_bajan_un_archivo():
+    """La ECH del INE: el catálogo la declara, los enlaces no entregan un archivo.
+
+    Medido el 10/10/26: sus siete datasets (`ine-ech2011` y `ine-encuesta-continua-de-hogares-*`)
+    declaran 25 recursos contra `www.ine.gub.uy`, y **los 25 devuelven la portada del sitio nuevo**
+    (HTML, con el `uuid` conservado como consulta). El host está vivo: no es un certificado roto ni un
+    enlace lento, es link rot, y el `formato` declarado miente.
+
+    Se prueba **uno** de los 25 como canario —son la misma URL contra el mismo host—, porque este host
+    deja colgado el pedido cuando no responde y pedir los 25 cuesta siete minutos. El día que alguno
+    vuelva a entregar un archivo, este test falla: es la señal para escribir el lector.
+    Ver `docs/2026-10-09-fuentes-candidatas.md`, sección 4.
+    """
+    firma_de_archivo = (b"Rar!", b"\xd0\xcf\x11\xe0", b"PK\x03\x04", b"%PDF")
+    datasets = {
+        d["nombre"]
+        for consulta in ("encuesta continua de hogares", "ech")
+        for d in catalogo.buscar(consulta, filas=50)["datasets"]
+        if "encuesta-continua" in d["nombre"] or d["nombre"].startswith("ine-ech")
+    }
+    assert len(datasets) >= 5, "el catálogo dejó de listar la ECH: revisar antes de tocar la guarda"
+
+    hosts = set()
+    for nombre in sorted(datasets):
+        try:
+            hosts |= {urlparse(r["url"]).netloc for r in recursos(nombre)}
+        except Exception:  # noqa: BLE001,S110 - un dataset sin recursos no dice nada de los enlaces
+            continue
+
+    primero = recursos("ine-ech2011")[0]
+    try:
+        # Un pedido chico alcanza para mirar la firma del archivo, sin bajar el archivo entero.
+        cuerpo = red.pedir(primero["url"], cabeceras={"Range": "bytes=0-999"}, timeout=10)
+    except OSError:
+        # El TLS de este host se corta a veces (cadena incompleta): tampoco entrega un archivo.
+        cuerpo = b""
+
+    entrego_archivo = cuerpo.startswith(firma_de_archivo)
+    assert not entrego_archivo, (
+        f"la fuente mejoró: la ECH volvió a entregar un archivo ({primero['formato']}). "
+        "Escribir el lector, ver docs/2026-10-09-fuentes-candidatas.md, sección 4"
+    )
+    assert hosts == {"www.ine.gub.uy"}, (
+        f"el catálogo movió los archivos de la ECH a otro host: {sorted(hosts)}. "
+        "Si es su propio host, la ECH es alcanzable: escribir el lector"
+    )

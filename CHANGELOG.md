@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- **La ECH del INE no es alcanzable desde el catálogo.** Sus siete datasets declaran 25 recursos
+  contra `www.ine.gub.uy`, y **los 25 devuelven HTML** —la portada del sitio nuevo, con el `uuid`
+  conservado como consulta—, no un archivo (medido el 10/10/26). No es un certificado roto ni un host
+  caído: es link rot, y el `formato` declarado miente. Queda la guarda
+  `test_los_recursos_de_la_ech_no_bajan_un_archivo` (marcada `red`), que falla el día que alguno
+  vuelva a entregar un archivo.
+- El docstring de `uydatos.compras` numeraba su lista `1, 2, 3, 8, 4, 5, 6, 7`. Ahora va en orden.
+
 ## 0.8.0 — 2026-10-10
 
 - **Nuevo: `uydatos.parlamento`**: asistencias del Senado y de Diputados por legislatura (46 a 50),
