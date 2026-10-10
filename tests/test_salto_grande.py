@@ -167,3 +167,99 @@ class TestPedido:
 
         ua = _pedido().get_header("User-agent") or ""
         assert ua and not ua.lower().startswith("python-urllib")
+
+
+# --- Lecturas (DatosHidrometeorologicos) ----------------------------------------------------------
+
+from datetime import date, datetime  # noqa: E402
+
+from uydatos.salto_grande import (  # noqa: E402
+    SIN_DATO,
+    cobertura,
+    leer_datos,
+    resumen_diario,
+    tramos,
+)
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def _datos(filas: str) -> str:
+    return _soap(filas).replace("<return>", '<return SOAP-ENC:arrayType="ns1:DatoHidrometeorologico[1]">')
+
+
+def _item(fecha, p="0", h="11.43", q="-999"):
+    return (
+        '<item xsi:type="ns1:DatoHidrometeorologico">'
+        f'<Fecha xsi:type="xsd:string">{fecha}</Fecha><P xsi:type="xsd:float">{p}</P>'
+        f'<H xsi:type="xsd:float">{h}</H><Q xsi:type="xsd:float">{q}</Q></item>'
+    )
+
+
+class TestLecturas:
+    def test_el_recorte_real_se_lee(self):
+        filas = leer_datos(FIXTURES / "salto_grande_datos_recorte.xml")
+        assert filas[0] == {"fecha": datetime(2026, 10, 8, 0, 0), "P": 0.0, "H": 11.43, "Q": None}
+        assert filas[-1]["fecha"] == datetime(2026, 10, 9, 0, 0)
+
+    def test_menos_999_es_sin_dato_no_un_numero(self):
+        """Medido el 10/10/2026: la estación Salto publica Q = -999 en todas las lecturas."""
+        assert SIN_DATO == -999.0
+        f = leer_datos(FIXTURES / "salto_grande_datos_recorte.xml")
+        assert all(x["Q"] is None for x in f)
+
+    def test_un_error_del_servidor_se_rechaza_con_su_mensaje(self):
+        """Más de 31 días no da lista vacía: da un SOAP Fault, y el lector lo dice."""
+        with pytest.raises(SaltoGrandeInvalido, match="31"):
+            leer_datos(FIXTURES / "salto_grande_fault_31_dias.xml")
+
+    def test_una_lista_vacia_es_valida(self, tmp_path):
+        """Un rango sin lecturas es posible (hay huecos); quien llama mide la cobertura."""
+        f = tmp_path / "r.xml"
+        f.write_text(_datos(""), encoding="utf-8")
+        assert leer_datos(f) == []
+
+    def test_fecha_repetida_se_rechaza(self, tmp_path):
+        f = tmp_path / "r.xml"
+        f.write_text(_datos(_item("2026-10-08 00:00:00") + _item("2026-10-08 00:00:00")), encoding="utf-8")
+        with pytest.raises(SaltoGrandeInvalido, match="repetid"):
+            leer_datos(f)
+
+
+class TestTramos:
+    def test_un_mes_entra_en_un_tramo(self):
+        assert tramos(date(2026, 10, 1), date(2026, 10, 31)) == [(date(2026, 10, 1), date(2026, 11, 1))]
+
+    def test_el_hasta_incluye_el_dia_entero(self):
+        """El servicio toma `fechaHasta` como las 00:00: para incluir el día se pide hasta el siguiente."""
+        assert tramos(date(2026, 10, 8), date(2026, 10, 8)) == [(date(2026, 10, 8), date(2026, 10, 9))]
+
+    def test_un_rango_largo_se_parte_en_tramos_de_hasta_31_dias(self):
+        t = tramos(date(2026, 1, 1), date(2026, 3, 31))
+        assert t[0][0] == date(2026, 1, 1) and t[-1][1] == date(2026, 4, 1)
+        assert all((b - a).days <= 31 for a, b in t)
+        assert all(t[i][1] == t[i + 1][0] for i in range(len(t) - 1))
+
+    def test_desde_posterior_a_hasta(self):
+        with pytest.raises(ValueError):
+            tramos(date(2026, 2, 1), date(2026, 1, 1))
+
+
+class TestResumen:
+    def _lecturas(self):
+        return [
+            {"fecha": datetime(2026, 10, 8, 0, 0), "P": 0.0, "H": 11.0, "Q": None},
+            {"fecha": datetime(2026, 10, 8, 12, 0), "P": 2.0, "H": 12.0, "Q": None},
+            {"fecha": datetime(2026, 10, 9, 0, 0), "P": 0.0, "H": None, "Q": None},
+        ]
+
+    def test_por_dia_con_cuantas_lecturas(self):
+        r = resumen_diario(self._lecturas(), "H")
+        assert r == [
+            {"dia": date(2026, 10, 8), "min": 11.0, "media": 11.5, "max": 12.0, "lecturas": 2},
+            {"dia": date(2026, 10, 9), "min": None, "media": None, "max": None, "lecturas": 0},
+        ]
+
+    def test_cobertura_contra_96_lecturas_por_dia(self):
+        c = cobertura(self._lecturas(), date(2026, 10, 8), date(2026, 10, 9))
+        assert c == {"esperadas": 192, "recibidas": 3, "con_H": 2}

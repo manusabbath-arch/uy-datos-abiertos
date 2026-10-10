@@ -115,3 +115,12 @@ def test_un_indicador_de_mides_se_baja_y_se_lee(tmp_path):
     assert s["columnas"] == ["año", "valor"]
     assert s["filas"] == 2
     assert s["filas_en_blanco"] == 0
+
+
+def test_salto_grande_lecturas_de_la_estacion_salto(tmp_path):
+    from datetime import date
+
+    ruta = salto_grande.descargar_datos("A501258E", date(2026, 9, 1), date(2026, 9, 2), tmp_path / "s.xml")
+    lecturas = salto_grande.leer_datos(ruta)
+    assert 90 <= len(lecturas) <= 97
+    assert all(f["H"] is not None and 0 < f["H"] < 20 for f in lecturas)
