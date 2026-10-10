@@ -25,6 +25,6 @@ Módulos:
 - `hojas`        — hojas de cálculo XLSX y XLS, con el motor elegido por la firma del archivo.
 """
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"
