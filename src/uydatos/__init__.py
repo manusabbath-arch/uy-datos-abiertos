@@ -14,12 +14,13 @@ Módulos:
 - `inumet`       — observaciones meteorológicas horarias de INUMET, en siete estaciones.
 - `indec`        — IPC nacional de Argentina (API de series de datos.gob.ar).
 - `ibge`         — IPCA de Brasil (API SIDRA del IBGE).
-- `ideuy`        — geocodificación de direcciones uruguayas con IDE.uy.
+- `ideuy`        — geocodificación de direcciones uruguayas con IDE.uy, directa e inversa.
+- `limites`      — departamentos y localidades del INE (con población 2023), y en cuál cae un punto.
 - `rut`          — dígito verificador de RUT y cédula uruguaya.
 - `semanas`      — semanas ISO 8601 (W1, W2...) con los bordes de año resueltos.
 - `catalogo`     — recursos del catálogo de datos abiertos de Uruguay (CKAN).
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"

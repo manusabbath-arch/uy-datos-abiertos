@@ -287,6 +287,50 @@ def geocodificar(direccion: str, localidad: str = "", departamento: str = "") ->
     return fila
 
 
+URL_INVERSA = "https://direcciones.ide.uy/api/v1/geocode/reverse"
+
+
+def interpretar_inversa(lat: float, lon: float, respuesta: list) -> list[dict]:
+    """Las direcciones de una respuesta de `reverse`, ordenadas por distancia al punto y con ella.
+
+    Descarta las que vienen sin coordenada (lat y lng en 0): `rutakm` las devuelve así con
+    `state: 1` en todas las rutas probadas el 10/10/2026, y un 0,0 es un punto en el océano.
+    """
+    out = []
+    for item in respuesta:
+        try:
+            ilat, ilon = float(item["lat"]), float(item["lng"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if ilat == 0 and ilon == 0:
+            continue
+        out.append(
+            {
+                "direccion": str(item.get("address") or ""),
+                "tipo": str(item.get("type") or ""),
+                "localidad": item.get("localidad"),
+                "departamento": item.get("departamento"),
+                "lat": ilat,
+                "lon": ilon,
+                "distancia_km": round(distancia_km(lat, lon, ilat, ilon), 3),
+            }
+        )
+    return sorted(out, key=lambda x: x["distancia_km"])
+
+
+def inversa(lat: float, lon: float, limite: int = 3) -> list[dict]:
+    """Las direcciones más cercanas a un punto, con su distancia. **Sale a la red.**
+
+    `reverse` devuelve la dirección más cercana **esté donde esté**: un punto en el mar, a unos
+    200 km de la costa, devolvió "LOS TORDOS 15, MALDONADO" (10/10/2026). Por eso la distancia va
+    siempre; para saber en qué departamento o localidad cae un punto, usar `uydatos.limites`.
+    """
+    limite = max(1, min(limite, 20))
+    url = f"{URL_INVERSA}?{red.codificar({'latitud': str(lat), 'longitud': str(lon), 'limit': str(limite)})}"
+    # El servicio no respeta `limit` (pedí 3 y devolvió 4, 10/10/2026): se recorta acá.
+    return interpretar_inversa(lat, lon, _consultar(url))[:limite]
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m uydatos.ideuy", description=__doc__.splitlines()[0])
     ap.add_argument("direccion")

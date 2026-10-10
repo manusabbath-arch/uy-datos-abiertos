@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from uydatos import ancap, bcu, catalogo, ibge, indec, inumet, mides, salto_grande
+from uydatos import ancap, bcu, catalogo, ibge, ideuy, indec, inumet, limites, mides, salto_grande
 from uydatos.catalogo import recursos
 
 pytestmark = pytest.mark.red
@@ -128,3 +128,21 @@ def test_salto_grande_lecturas_de_la_estacion_salto(tmp_path):
     lecturas = salto_grande.leer_datos(ruta)
     assert 90 <= len(lecturas) <= 97
     assert all(f["H"] is not None and 0 < f["H"] < 20 for f in lecturas)
+
+
+def test_limites_departamentos_y_localidades(tmp_path):
+    deps = limites.leer("departamentos", limites.descargar("departamentos", tmp_path / "d.geojson"))
+    assert sum(1 for a in deps if a["tipo"] == "departamento") == 19
+    assert limites.ubicar(deps, -31.3833, -57.9606)["nombre"] == "SALTO"
+    locs = limites.leer("localidades", limites.descargar("localidades", tmp_path / "l.geojson"))
+    salto = limites.ubicar(locs, -31.3833, -57.9606)
+    assert salto["nombre"] == "SALTO" and salto["datos"]["poblacion_2023"] > 100_000
+
+
+def test_inversa_ordena_por_distancia():
+    r = ideuy.inversa(-31.3833, -57.9606, 3)
+    assert len(r) <= 3 and r[0]["distancia_km"] < 0.5 and r[0]["departamento"] == "SALTO"
+
+
+def test_buscar_geojson_no_da_cero():
+    assert catalogo.buscar("", formato="geojson", filas=1)["total"] > 0

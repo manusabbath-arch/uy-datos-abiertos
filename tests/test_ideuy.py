@@ -240,3 +240,34 @@ class TestOrdenDeLasCalles:
         assert calles_de_esquina("18 DE JULIO Y EJIDO") == ("18 DE JULIO", "EJIDO")
         assert calles_de_esquina("Artigas 691 esq. Solari") == ("Artigas 691", "Solari")
         assert calles_de_esquina("JOSE P. VARELA 1500") is None
+
+
+class TestInversa:
+    """`reverse` devuelve la dirección más cercana **esté donde esté**: un punto en el mar dio una calle
+    de Maldonado (medido el 10/10/2026). La distancia va siempre en la respuesta."""
+
+    def _item(self, direccion, lat, lng, localidad="SALTO", departamento="SALTO", tipo="CALLEyPORTAL"):
+        return {
+            "type": tipo,
+            "address": direccion,
+            "localidad": localidad,
+            "departamento": departamento,
+            "lat": lat,
+            "lng": lng,
+        }
+
+    def test_ordena_por_distancia_y_la_declara(self):
+        from uydatos.ideuy import interpretar_inversa
+
+        r = interpretar_inversa(
+            -31.3833, -57.9606, [self._item("LEJOS 1", -31.39, -57.97), self._item("CERCA 2", -31.3833, -57.9605)]
+        )
+        assert [x["direccion"] for x in r] == ["CERCA 2", "LEJOS 1"]
+        assert r[0]["distancia_km"] < 0.05 and r[1]["distancia_km"] > 0.5
+
+    def test_una_respuesta_sin_coordenada_se_descarta(self):
+        """`rutakm` devuelve lat 0 y lng 0 con state 1 en todas las rutas probadas: no es un punto."""
+        from uydatos.ideuy import interpretar_inversa
+
+        r = interpretar_inversa(-31.38, -57.96, [self._item("RUTA 3 KM 405", 0.0, 0.0, None, None, "RUTAyKM")])
+        assert r == []

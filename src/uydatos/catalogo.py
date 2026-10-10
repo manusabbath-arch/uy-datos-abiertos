@@ -71,6 +71,29 @@ def parsear_busqueda(resultado: dict) -> dict:
     }
 
 
+def variantes_de_formato(formato: str) -> list[str]:
+    """Los valores de `res_format` del catálogo que son `formato` sin importar mayúsculas.
+
+    **Sale a la red** (una búsqueda sin filas, solo con el facet). El filtro de CKAN distingue
+    mayúsculas y el catálogo mezcla: medido el 10/10/2026, 21 recursos «GeoJSON» y ninguno «GEOJSON»;
+    «csv zip» junto a «CSV ZIP». Si no aparece ninguno se devuelve el formato en mayúsculas, que es lo
+    más común, y la búsqueda dará 0 por un motivo real.
+    """
+    r = accion("package_search", rows=0, **{"facet.field": '["res_format"]', "facet.limit": "-1"})
+    existentes = (r.get("facets") or {}).get("res_format") or {}
+    variantes = sorted(f for f in existentes if f.strip().lower() == formato.strip().lower())
+    return variantes or [formato.upper()]
+
+
+def _filtro_formato(variantes: list[str]) -> str:
+    def citar(v: str) -> str:
+        return f'"{v}"' if any(c in v for c in ' ():"') else v
+
+    if len(variantes) == 1:
+        return f"res_format:{citar(variantes[0])}"
+    return "res_format:(" + " OR ".join(f'"{v}"' for v in variantes) + ")"
+
+
 def buscar(
     texto: str = "",
     *,
@@ -90,7 +113,7 @@ def buscar(
     if organizacion:
         partes.append(f"organization:{organizacion}")
     if formato:
-        partes.append(f"res_format:{formato.upper()}")
+        partes.append(_filtro_formato(variantes_de_formato(formato)))
     parametros = {
         "q": texto,
         "rows": max(1, min(filas, 100)),

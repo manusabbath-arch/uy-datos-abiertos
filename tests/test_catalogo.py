@@ -137,3 +137,30 @@ class TestDatastore:
         assert r["total"] == 332071
         assert r["campos"] == ["_id", "fecha"]
         assert r["filas"] == [{"_id": 1, "fecha": "2026-10-09 00:00"}]
+
+
+class TestFormatoSinImportarMayusculas:
+    """El filtro `res_format` de CKAN distingue mayúsculas, y el catálogo mezcla: medido el 10/10/2026,
+    21 recursos «GeoJSON» y ninguno «GEOJSON», y «csv zip» junto a «CSV ZIP». Pasar el formato a
+    mayúsculas devolvía 0 para geojson: un cero que parece un dato."""
+
+    def _falso(self, facetas, visto):
+        def accion(nombre, **p):
+            if p.get("rows") == 0:
+                return {"count": 0, "facets": {"res_format": facetas}, "results": []}
+            visto.update(p)
+            return {"count": 0, "facets": {}, "results": []}
+
+        return accion
+
+    def test_geojson_encuentra_la_variante_que_existe(self, monkeypatch):
+        visto = {}
+        monkeypatch.setattr(catalogo, "accion", self._falso({"GeoJSON": 21, "CSV": 10}, visto))
+        catalogo.buscar("", formato="geojson")
+        assert visto["fq"] == "res_format:GeoJSON"
+
+    def test_varias_variantes_van_juntas(self, monkeypatch):
+        visto = {}
+        monkeypatch.setattr(catalogo, "accion", self._falso({"csv zip": 8, "CSV ZIP": 7, "CSV": 9}, visto))
+        catalogo.buscar("", formato="CSV ZIP")
+        assert visto["fq"] == 'res_format:("CSV ZIP" OR "csv zip")'

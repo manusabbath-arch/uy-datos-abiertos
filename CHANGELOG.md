@@ -1,5 +1,21 @@
 # Cambios
 
+## 0.4.0 — 2026-10-10
+
+- **Nuevo: `uydatos.limites`**: los límites del INE —departamentos (vía la IDE) y las 652
+  localidades (vía el MIDES), con población y viviendas en los campos `pob_tot_23`/`viv_tot_23`— y
+  en cuál cae un punto (`ubicar`, `mas_cercana`), sin dependencias de geometría. Trampas medidas el
+  10/10/2026: la capa trae **20 polígonos de departamentos**, uno es el **«LIMITE CONTESTADO»** con
+  Brasil y lleva el código y el ISO de Artigas; sin `srsName=EPSG:4326` llega en metros (UTM 21S) y
+  ningún punto en grados cae adentro; un error del WFS llega en XML con HTTP 200.
+- **`ideuy.inversa()`**: las direcciones más cercanas a un punto, ordenadas y con su distancia.
+  `reverse` devuelve la más cercana **esté donde esté** (un punto en el mar dio una calle de
+  Maldonado a 190 km), no respeta `limit` y `rutakm` devuelve lat/lng 0,0 con `state: 1`: esas
+  respuestas se descartan.
+- **Corregido: `catalogo.buscar(formato=...)` daba 0 para `geojson`.** El filtro de CKAN distingue
+  mayúsculas y el catálogo publica «GeoJSON» (21 recursos), no «GEOJSON». Ahora busca todas las
+  variantes que existen (`variantes_de_formato`).
+
 ## 0.3.0 — 2026-10-10
 
 - **Nuevo en `uydatos.salto_grande`: las lecturas** (`DatosHidrometeorologicos`) de altura, lluvia
