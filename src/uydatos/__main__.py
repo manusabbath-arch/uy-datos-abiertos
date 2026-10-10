@@ -21,6 +21,7 @@ from uydatos import (
     indec,
     inia,
     inumet,
+    mides,
     red,
     salto_grande,
 )
@@ -34,6 +35,7 @@ LECTORES = {
     "indec": indec,
     "inia": inia,
     "inumet": inumet,
+    "mides": mides,
     "red": red,
     "salto_grande": salto_grande,
 }

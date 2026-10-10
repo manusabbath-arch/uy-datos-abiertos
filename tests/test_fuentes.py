@@ -102,10 +102,11 @@ def test_el_datastore_de_inumet_se_puede_consultar_sin_bajar_el_archivo():
     assert "temp_aire" in r["campos"]
 
 
-def test_la_familia_de_mides_tiene_mil_ochocientos_sesenta_y_nueve_indicadores():
-    """Medido el 2026-10-09: la organizacion declara 1.875 datasets y 1.869 son de la familia."""
+def test_la_familia_de_mides_son_indicadores():
+    """Medido el 2026-10-09: la organizacion declara 1.875 datasets y 1.869 son de la familia. Se afirma
+    un piso: un indicador nuevo no es un error."""
     r = mides.indicadores(filas=100)
-    assert r["total"] == 1875
+    assert r["total"] >= 1500
     assert all(d["nombre"].startswith("mides-indicador-") for d in r["indicadores"])
 
 
