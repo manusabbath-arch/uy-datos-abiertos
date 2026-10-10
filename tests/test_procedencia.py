@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytest
+
 from uydatos import procedencia
 
 
@@ -30,9 +32,10 @@ class TestSello:
         s = procedencia.sello("BCU", ruta=ruta, bajado=datetime(2026, 10, 9, 22, 41))
         assert s["bajado"] == "2026-10-09T22:41"
 
-    def test_un_archivo_que_no_existe_no_rompe_el_sello(self, tmp_path):
-        s = procedencia.sello("BCU", ruta=tmp_path / "no-esta.csv")
-        assert s["sha256"] is None and s["bytes"] is None
+    def test_un_archivo_que_no_existe_se_rechaza(self, tmp_path):
+        """Un sello sin sha256 de un archivo que se dijo tener es una cita sin respaldo."""
+        with pytest.raises(FileNotFoundError, match="no-esta.csv"):
+            procedencia.sello("BCU", ruta=tmp_path / "no-esta.csv")
 
     def test_sin_archivo_el_sello_sirve_para_una_fuente_en_vivo(self):
         s = procedencia.sello("IDE.uy", url="https://direcciones.ide.uy/api/v0/geocode")

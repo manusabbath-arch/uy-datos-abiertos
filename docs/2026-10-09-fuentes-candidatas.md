@@ -3,24 +3,20 @@
 Fecha: 2026-10-09 (hora de Montevideo). Todo lo de acá se probó **por HTTP el 09/10/26**, y las
 cifras salen de un archivo o de una respuesta con su fecha. No hay nada re-tipeado de memoria.
 
-Este documento vive en el repo de la librería y no en `NG/investigaciones/` a propósito: describe
-qué le falta a **estos** dos repos, y su fuente de verdad es este repo. La investigación de origen
-—la que probó las fuentes por primera vez— es de NG:
-`NG/investigaciones/2026-10-03-fuentes-externas-y-el-data-hub-chatgpt.md` y
-`NG/investigaciones/2026-10-04-fuentes-externas-ronda-complementaria.md`.
+Describe qué le falta a **estos** dos repos. Las candidatas salen de una investigación previa de
+fuentes externas, privada, en la que cada fuente se probó por HTTP; acá se volvieron a medir.
 
 ## 1. Método
 
-Tres repos, tres capas, y la pregunta es siempre la misma: **¿esta fuente tiene una trampa que no
+Dos repos, dos capas, y la pregunta es siempre la misma: **¿esta fuente tiene una trampa que no
 da error, y ya está escrita en algún lado?**
 
 | Capa | Repo | Qué tiene |
 |---|---|---|
-| Investigación | `NG` (`investigaciones/`, `known-issues.md`) | 45 documentos; cada fuente probada por HTTP y cada trampa medida |
 | Lectores | **`uy-datos-abiertos`** (`uydatos`) | 10 módulos: la trampa de cada fuente, con excepción |
 | Agente | **`mcp-uruguay`** | 13 herramientas MCP que envuelven esos módulos, con caché |
 
-Lo que se hizo acá: **recorrer las candidatas que NG ya había probado y medir, una por una, cuáles
+Lo que se hizo acá: **recorrer las candidatas ya probadas y medir, una por una, cuáles
 le faltan a la librería**, con la trampa incluida. No es una lista de deseos: cada candidata entra
 o no entra por lo que se midió al abrir el archivo.
 
@@ -82,13 +78,11 @@ Ninguna de estas es una suposición: se abrieron.
 ### 3.1 Sanciones de Defensa del Consumidor — la fuente no cambió, el lector de la librería falta
 
 `defensa-del-consumidor-sanciones-a-empresas`: el recurso sigue siendo el mismo archivo
-(`datos_sanciones_2017_2024.csv`, 168.759 bytes, **sha `241a78a1…`**, idéntico al que NG midió el
+(`datos_sanciones_2017_2024.csv`, 168.759 bytes, **sha `241a78a1…`**, idéntico al medido el
 04/10/26) y el corte sigue siendo **2024**: 1.528 resoluciones, 397 sólo en 2024, **483 por «Precio
 no informado»** y **0 en Salto**.
 
-NG ya tiene un lector probado (`datos/scripts/cruce_sanciones.py`) porque su consumidor es un
-cruce con el maestro de clientes. Lo que falta acá es distinto: un lector **público** que devuelva
-las filas tal cual, sin el agregado de NG. **El límite que hay que declarar en el README de la
+Lo que falta acá es un lector **público** que devuelva las filas tal cual, sin cruzarlas con nada. **El límite que hay que declarar en el README de la
 librería**, y no es chico: el archivo trae `razon_social` y `rut` de terceros. Es un dato público
 —está en el catálogo abierto— pero el módulo tiene que devolver las filas y **no** decidir qué se
 versiona.
@@ -106,9 +100,7 @@ actualizado el 11/09/26, con columnas `Mercado;Mes;Anio;FamiliaDeProducto;LineaD
 y la unidad declarada **«Miles de m3»**. Trampas ya vistas: coma decimal, mes y año como texto
 (`'08'`, `'2026'`) y el mercado como primera columna.
 
-**Para qué sirve:** NG no tiene los litros por camión (**no existen en ninguna fuente del
-proyecto**, medido tres veces), así que su `$`/km no cierra. La venta nacional de combustibles no
-da los litros de un camión, pero sí el **denominador del mercado** contra el que se puede leer la
+**Para qué sirve:** la venta nacional de combustibles da el **denominador del mercado** contra el que se puede leer la
 serie de precios: es la diferencia entre «el gasoil subió 20%» y «el gasoil subió 20% y el volumen
 del mercado cayó 5%». Es una serie **sin consumidor hoy** —igual que el precio cuando entró— y por
 eso va última.
@@ -116,18 +108,16 @@ eso va última.
 ### 3.3 El SIPC: la serie de precios, y su costo real
 
 Confirmado por `package_show`: los datasets del SIPC traen **establecimiento + productos +
-precios** por año, y el recurso de precios pesa **1.004,2 MB (2026)** y **2.024,7 MB (2025)**. Es el
-mismo método que ya funcionó dos veces en NG (bajar, filtrar por código de establecimiento), no una
-integración nueva. **No se hace hasta que exista una pregunta que necesite más de un año**: con un
+precios** por año, y el recurso de precios pesa **1.004,2 MB (2026)** y **2.024,7 MB (2025)**. El método
+es bajar y filtrar por código de establecimiento, no una integración nueva. **No se hace hasta que exista una pregunta que necesite más de un año**: con un
 año alcanza para lo que el repo mide hoy. El disparador queda escrito y no es una fecha: *cuando
 exista una pregunta de precio que necesite la serie*.
 
 ## 4. Una trampa documentada que hoy **no se reproduce**, y por qué importa acá
 
-NG documentó el 04/10/26 que la **búsqueda** del catálogo estaba rota: `package_search` devolvía
+Una medición del 04/10/26 encontró la **búsqueda** del catálogo rota: `package_search` devolvía
 `count: 0` para todos los términos probados (`precios`, `salario`, `empleo`, `alimentarias`,
-`empresas`), mientras `package_list` traía 2.779 datasets sanos. De ahí salió —y quedó escrito en
-el plan de NG— el método *«bajá `package_list` y filtrá en Python, el buscador no sirve»*.
+`empresas`), mientras `package_list` traía 2.779 datasets sanos. De ahí salió el método *«bajá `package_list` y filtrá en Python, el buscador no sirve»*.
 
 **Medido hoy, con la misma llamada:**
 
@@ -155,7 +145,7 @@ que es lo que se midió sano en las dos fechas.
 **ajenas que se caen**. Las cinco ECH del INE (`ine-encuesta-continua-de-hogares-*`, 2012–2017)
 listan sus microdatos como `.RAR` contra `ine.gub.uy/c/document_library/get_file?...`, **sin
 tamaño declarado**, con `CC0 1.0`. No se probaron: si alguno de esos enlaces responde, la ECH
-—el nivel socioeconómico por zona que NG da por inaccesible— cambia de estado. Es una prueba de
+—el nivel socioeconómico por zona, hoy dado por inaccesible— cambia de estado. Es una prueba de
 una línea y queda como pendiente declarado, no como conclusión.
 
 ## 5. Orden propuesto
@@ -187,5 +177,4 @@ con licencia propia, y este repositorio publica código, no datos (ver `.gitigno
 
 **Sin archivo, citando la respuesta de la API con su fecha:** los conteos de `package_search` y
 `package_list` (§4); los recursos y tamaños por `package_show` (§3); las listas de estaciones y la
-unidad de cada dataset, del metadato JSON de INUMET. Los archivos de NG que se citan
-(`investigaciones/2026-10-03-…`, `2026-10-04-…`) son de otro repositorio y no se copian acá.
+unidad de cada dataset, del metadato JSON de INUMET. La investigación previa es de otro repositorio, privado, y no se copia acá.

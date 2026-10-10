@@ -88,9 +88,10 @@ def test_ideuy_edificio_publico_calle_inexistente_y_esquina():
 
 
 @pytest.mark.red
-def test_buscar_mides_devuelve_mil_ochocientos_setenta_y_cinco():
-    """Medido el 2026-10-09. Si este numero se mueve, el catalogo cambio: hay que volver a mirar."""
-    assert catalogo.buscar("", organizacion="mides")["total"] == 1875
+def test_buscar_por_organizacion_mides():
+    """Medido el 2026-10-09: 1.875. Se afirma un piso y no el número exacto: un dataset nuevo del MIDES
+    no es un error, y un test semanal que falla por eso enseña a ignorarlo."""
+    assert catalogo.buscar("", organizacion="mides")["total"] >= 1500
 
 
 @pytest.mark.red

@@ -54,7 +54,7 @@ La regla de fondo: **rechazar el archivo entero solo cuando el defecto cambia el
 ## 5. La salida
 
 - Toda funcion publica que devuelve un numero cierra con el sello de `uydatos.procedencia`: fuente,
-  fecha de la copia, sha256 y filas. Un informe de este paquete y uno del proyecto NG cierran igual.
+  fecha de la copia, sha256 y filas.
 - El resumen declara los **extremos por columna**: es lo que deja ver el valor imposible sin romper
   la lectura.
 

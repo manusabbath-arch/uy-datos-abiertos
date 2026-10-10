@@ -36,7 +36,7 @@ sobre los archivos completos de temperatura (332.070 valores, 12.059.752 bytes) 
 
 Uso:
     python -m uydatos.inumet bajar precipitacion datos/inumet_precip.csv
-    python -m uydatos.inumet resumen datos/inumet_precip.csv
+    python -m uydatos.inumet resumen datos/inumet_precip.csv precipitacion
     python -m uydatos.inumet diaria datos/inumet_precip.csv precip_horario "Salto G3" suma
 """
 

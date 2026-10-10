@@ -2,8 +2,7 @@
 
 Hoy la trazabilidad esta repartida: `fuente` y `bajado` escritos a mano en cada herramienta del
 servidor MCP, el sha256 a mano en los tests de red, y `cache.sello()` en el propio servidor. Aca
-se vuelve una sola cosa, con el mismo formato que el sello del proyecto NG
-(`NG/datos/scripts/procedencia.py`): un informe de los dos lados cierra igual.
+se vuelve una sola cosa: el mismo sello para cualquier informe que use el paquete.
 """
 
 from __future__ import annotations
@@ -42,19 +41,23 @@ def sello(
     filas: Optional[int] = None,
     bajado: Optional[datetime] = None,
 ) -> Sello:
-    """Arma el sello. Con `ruta`, el sha256 y la fecha salen del archivo; `bajado` los puede pisar."""
+    """Arma el sello. Con `ruta`, el sha256 y la fecha salen del archivo; `bajado` los puede pisar.
+
+    Una `ruta` que no existe se rechaza: un sello sin sha256 de un archivo que se dijo tener no es un
+    sello, es una cita sin respaldo."""
     if ruta is not None:
         p = Path(ruta)
-        if p.exists():
-            bajado = bajado or datetime.fromtimestamp(p.stat().st_mtime)
-            return {
-                "fuente": fuente,
-                "url": url,
-                "bajado": bajado.isoformat(timespec="minutes"),
-                "sha256": sha256(p),
-                "bytes": p.stat().st_size,
-                "filas": filas,
-            }
+        if not p.is_file():
+            raise FileNotFoundError(f"{p}: no se puede sellar un archivo que no está")
+        bajado = bajado or datetime.fromtimestamp(p.stat().st_mtime)
+        return {
+            "fuente": fuente,
+            "url": url,
+            "bajado": bajado.isoformat(timespec="minutes"),
+            "sha256": sha256(p),
+            "bytes": p.stat().st_size,
+            "filas": filas,
+        }
     return {
         "fuente": fuente,
         "url": url,
