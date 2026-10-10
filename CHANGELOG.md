@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.3.0 — sin publicar
+
+- **Nuevo: `uydatos.inumet`**, las observaciones meteorológicas horarias de INUMET en siete
+  estaciones del país (temperatura, precipitación puntual, humedad, viento, presión y
+  insolación). Rechaza la fila cuyo `estacion_id` trae el texto de un error del servidor
+  (`' please try again later.'`, medido en los dos archivos completos) y no agrega un día local
+  al que le falte una hora. Ver `docs/2026-10-09-fuentes-candidatas.md`.
+- La versión sube a 0.3.0 y **`mcp-uruguay` tiene el pin `uydatos>=0.2.1,<0.3`**: hay que moverlo
+  antes de publicar esta versión, o el servidor MCP no la va a poder usar.
+
 ## 0.2.1 — 2026-10-09
 
 - Publicado en PyPI: `pip install uydatos`. Se publica solo al crear una Release en GitHub, con

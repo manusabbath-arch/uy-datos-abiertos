@@ -6,9 +6,10 @@
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
 
 > **In English:** strict, dependency-free Python readers for Uruguayan and regional public data
-> (Central Bank of Uruguay exchange rates, ANCAP fuel prices, INIA weather, Salto Grande river
-> stations, Argentina's CPI, Brazil's IPCA, IDE.uy geocoding, RUT/ID check digits). Each reader
-> documents its source's traps and **raises instead of silently fixing** bad data.
+> Central Bank of Uruguay exchange rates, ANCAP fuel prices, INIA weather in Salto, INUMET hourly
+> observations from seven national stations, Uruguay River stations, Argentina's CPI, Brazil's
+> IPCA, IDE.uy geocoding, RUT/ID check digits). Each reader documents its source's traps and
+> **raises instead of silently fixing** bad data.
 
 Lectores **estrictos** de datos públicos de Uruguay y la región, en Python puro (sin
 dependencias).
@@ -24,6 +25,7 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 | `uydatos.bcu` | Banco Central del Uruguay (web service SOAP) | Dólar, Unidad Indexada, peso argentino, real | Una respuesta de error se guarda igual y parece un mes sin cotización. |
 | `uydatos.ancap` | ANCAP, catálogo de datos abiertos | Precio máximo al público de combustibles | Las columnas `Unidad` y `Valor` vienen invertidas, y el archivo apila publicaciones. |
 | `uydatos.inia` | INIA, estación Salto Grande | Lluvia y temperaturas diarias desde 1970, normales y anomalías | El día va de 9:00 a 9:00; un vacío es nulo, no cero. |
+| `uydatos.inumet` | INUMET, red nacional | Observaciones horarias de temperatura, lluvia, humedad, viento y presión en siete estaciones del país | La columna `estacion_id` trae el nombre y **puede traer el texto de un error del servidor**; la hora es UTC, no local. |
 | `uydatos.salto_grande` | Comisión Técnica Mixta de Salto Grande (SOAP) | Estaciones hidrometeorológicas de la cuenca del río Uruguay | El arreglo SOAP encoded se llama `item`: buscar `Estacion` da lista vacía sin error. |
 | `uydatos.indec` | API de series de datos.gob.ar | IPC nacional de Argentina, base dic-2016 | La API sigue sirviendo las bases 2003 y 2008, discontinuadas. |
 | `uydatos.ibge` | API SIDRA del IBGE | IPCA de Brasil, número-índice | La tabla trae varias variables; una variación leída como índice no da error. |
@@ -78,6 +80,8 @@ python -m uydatos.salto_grande cerca datos/estaciones.xml -31.383 -57.960
 python -m uydatos.indec bajar datos/ipc_ar.json
 python -m uydatos.ibge bajar datos/ipca.json
 python -m uydatos.catalogo inia-precipitacion-temps-extremas-sg
+python -m uydatos.inumet bajar precipitacion datos/inumet_precip.csv
+python -m uydatos.inumet diaria datos/inumet_precip.csv precip_horario "Salto G3" suma
 python -m uydatos.ideuy "Avenida 18 de Julio 1360" --localidad Montevideo --departamento Montevideo
 ```
 

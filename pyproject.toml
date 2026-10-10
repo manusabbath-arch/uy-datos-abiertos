@@ -1,11 +1,11 @@
 [project]
 name = "uydatos"
-version = "0.2.1"
-description = "Lectores estrictos de datos públicos de Uruguay y la región: BCU, ANCAP, INIA, Salto Grande, INDEC, IBGE, IDE.uy, RUT y cédula."
+version = "0.3.0"
+description = "Lectores estrictos de datos públicos de Uruguay y la región: BCU, ANCAP, INIA, INUMET, Salto Grande, INDEC, IBGE, IDE.uy, RUT y cédula."
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Manu Martinez" }]
-keywords = ["uruguay", "datos-abiertos", "open-data", "bcu", "ide-uy", "rut"]
+keywords = ["uruguay", "datos-abiertos", "open-data", "bcu", "ide-uy", "rut", "inumet", "clima"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

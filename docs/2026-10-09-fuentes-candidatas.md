@@ -1,0 +1,170 @@
+# Qué de las investigaciones de fuentes externas se puede aplicar a `uydatos` y `mcp-uruguay`
+
+Fecha: 2026-10-09 (hora de Montevideo). Todo lo de acá se probó **por HTTP el 09/10/26**, y las
+cifras salen de un archivo o de una respuesta con su fecha. No hay nada re-tipeado de memoria.
+
+Este documento vive en el repo de la librería y no en `NG/investigaciones/` a propósito: describe
+qué le falta a **estos** dos repos, y su fuente de verdad es este repo. La investigación de origen
+—la que probó las fuentes por primera vez— es de NG:
+`NG/investigaciones/2026-10-03-fuentes-externas-y-el-data-hub-chatgpt.md` y
+`NG/investigaciones/2026-10-04-fuentes-externas-ronda-complementaria.md`.
+
+## 1. Método
+
+Tres repos, tres capas, y la pregunta es siempre la misma: **¿esta fuente tiene una trampa que no
+da error, y ya está escrita en algún lado?**
+
+| Capa | Repo | Qué tiene |
+|---|---|---|
+| Investigación | `NG` (`investigaciones/`, `known-issues.md`) | 45 documentos; cada fuente probada por HTTP y cada trampa medida |
+| Lectores | **`uy-datos-abiertos`** (`uydatos`) | 10 módulos: la trampa de cada fuente, con excepción |
+| Agente | **`mcp-uruguay`** | 13 herramientas MCP que envuelven esos módulos, con caché |
+
+Lo que se hizo acá: **recorrer las candidatas que NG ya había probado y medir, una por una, cuáles
+le faltan a la librería**, con la trampa incluida. No es una lista de deseos: cada candidata entra
+o no entra por lo que se midió al abrir el archivo.
+
+## 2. La candidata que valía, y ya está adentro: INUMET
+
+Antes de esta sesión, `uydatos` tenía **una** fuente de clima: `inia`, una sola estación, en Salto.
+INUMET tiene **seis datasets en el catálogo**, con licencia de datos abiertos de Uruguay; los dos
+que se midieron a fondo (temperatura y precipitación) traían `metadata_modified` del **09/10/26**,
+el mismo día de esta corrida.
+
+`uydatos.inumet` es nuevo (0.3.0). La forma de los archivos es `fecha;estacion_id;<valor>[,<valor>]`
+y las tres trampas que se midieron leyendo los archivos **completos** de temperatura
+(12.059.752 bytes, sha `ddcd33dd…`) y precipitación (9.887.612 bytes, sha `f89d5765…`) son:
+
+1. **La columna de la estación puede traer el texto de un error del servidor.** Los dos archivos
+   traen una fila cuyo `estacion_id` es `' please try again later.'`. Llega **sin fecha**, así que
+   no es una fila de dato; lo peligroso es agrupar por esa columna sin validarla: crea una
+   **octava estación** (« please try again later.») con sus 0 filas, y nada se pone rojo. El lector
+   la saltea, la **cuenta** (`filas_sin_dato()`) y rechaza la variante que sí traiga fecha.
+2. **La hora es UTC**, y lo dice el metadato del dataset, no el encabezado. Uruguay es UTC−3 todo
+   el año: agregar por día sobre la fecha cruda **corta el día local a las 21:00**. `serie_diaria()`
+   toma el desfase como parámetro y un día local al que le falte una hora queda en `None` con sus
+   `horas` declaradas.
+3. **`estacion_id` no es un id: es el nombre** («Salto G3»), y el valor viene en la unidad que
+   declara el metadato. El lector no la convierte.
+
+Medido sobre el archivo real de temperatura: **332.070 filas de dato y 8 líneas sin dato**, siete
+estaciones, del 2020-01-01 00:00 UTC al 2026-10-09 03:00 UTC. Sobre precipitación, en Salto:
+**1.457 de 1.532 días locales** con suma calculable (95,1%); el 2026-10-07 sumó 23,9 mm.
+
+**Lo que queda sin verificar, y se declara:** de los otros cuatro datasets (humedad, viento,
+presión, insolación) se midió **el encabezado** por petición de rango, no el contenido. Dos cosas
+ya se sabe que son distintas: **viento trae dos columnas de valor** (`dir_viento;int_viento`) y
+**insolación es diaria y de cinco estaciones**, no horaria de siete. `DATASETS` los declara con esa
+forma, pero el contenido no se midió: hasta que no se mida, no se puede afirmar que no tengan otra
+trampa.
+
+## 3. Candidatas verificadas que **no** entraron todavía
+
+Ninguna de estas es una suposición: se abrieron.
+
+### 3.1 Sanciones de Defensa del Consumidor — la fuente no cambió, el lector de la librería falta
+
+`defensa-del-consumidor-sanciones-a-empresas`: el recurso sigue siendo el mismo archivo
+(`datos_sanciones_2017_2024.csv`, 168.759 bytes, **sha `241a78a1…`**, idéntico al que NG midió el
+04/10/26) y el corte sigue siendo **2024**: 1.528 resoluciones, 397 sólo en 2024, **483 por «Precio
+no informado»** y **0 en Salto**.
+
+NG ya tiene un lector probado (`datos/scripts/cruce_sanciones.py`) porque su consumidor es un
+cruce con el maestro de clientes. Lo que falta acá es distinto: un lector **público** que devuelva
+las filas tal cual, sin el agregado de NG. **El límite que hay que declarar en el README de la
+librería**, y no es chico: el archivo trae `razon_social` y `rut` de terceros. Es un dato público
+—está en el catálogo abierto— pero el módulo tiene que devolver las filas y **no** decidir qué se
+versiona.
+
+Trampas medidas para ese lector: `cp1252` con `;`; el `rut` viene con **relleno de espacios a la
+derecha** (`'217795170014    '`, 1.527 de 1.528 con 12 dígitos tras el `.strip()`); **una fila con
+un RUT de 3 dígitos** (un vacío mal exportado) que no se descarta en silencio.
+
+### 3.2 ANCAP: la cantidad de ventas — el denominador de mercado
+
+Además del precio (`ancap-precio-combustible-pe`, que `uydatos.ancap` ya lee), ANCAP publica
+`ancap-cantidad-ventas-combustibles`, `ancap-produccion-combustibles` y
+`ancap-inventario-promedio-combustibles`. El de ventas son **71.799 bytes** (sha `2c648ef7…`),
+actualizado el 11/09/26, con columnas `Mercado;Mes;Anio;FamiliaDeProducto;LineaDeProducto;Bandera;CantidadCorregida;Unidad`
+y la unidad declarada **«Miles de m3»**. Trampas ya vistas: coma decimal, mes y año como texto
+(`'08'`, `'2026'`) y el mercado como primera columna.
+
+**Para qué sirve:** NG no tiene los litros por camión (**no existen en ninguna fuente del
+proyecto**, medido tres veces), así que su `$`/km no cierra. La venta nacional de combustibles no
+da los litros de un camión, pero sí el **denominador del mercado** contra el que se puede leer la
+serie de precios: es la diferencia entre «el gasoil subió 20%» y «el gasoil subió 20% y el volumen
+del mercado cayó 5%». Es una serie **sin consumidor hoy** —igual que el precio cuando entró— y por
+eso va última.
+
+### 3.3 El SIPC: la serie de precios, y su costo real
+
+Confirmado por `package_show`: los datasets del SIPC traen **establecimiento + productos +
+precios** por año, y el recurso de precios pesa **1.004,2 MB (2026)** y **2.024,7 MB (2025)**. Es el
+mismo método que ya funcionó dos veces en NG (bajar, filtrar por código de establecimiento), no una
+integración nueva. **No se hace hasta que exista una pregunta que necesite más de un año**: con un
+año alcanza para lo que el repo mide hoy. El disparador queda escrito y no es una fecha: *cuando
+exista una pregunta de precio que necesite la serie*.
+
+## 4. Una trampa documentada que hoy **no se reproduce**, y por qué importa acá
+
+NG documentó el 04/10/26 que la **búsqueda** del catálogo estaba rota: `package_search` devolvía
+`count: 0` para todos los términos probados (`precios`, `salario`, `empleo`, `alimentarias`,
+`empresas`), mientras `package_list` traía 2.779 datasets sanos. De ahí salió —y quedó escrito en
+el plan de NG— el método *«bajá `package_list` y filtrá en Python, el buscador no sirve»*.
+
+**Medido hoy, con la misma llamada:**
+
+| `q=` | `count` |
+|---|---|
+| `precios` | **27** |
+| `sipc` | **5** |
+| `combustible` | **9** |
+| `salario` | **8** |
+| `alimentarias` | **15** |
+| `empleo` | **227** |
+| `meteorologic` | 0 |
+
+`package_list` sigue en **2.779**. O sea: **hoy el buscador del catálogo responde y encuentra**. No
+se puede saber desde acá si el 04/10/26 estaba caído o si la medición de entonces fue la que
+estaba mal; lo que sí se sabe es que **una trampa documentada se re-verifica antes de escribir un
+workaround sobre ella**.
+
+Por qué importa en este repo: la librería **no** tiene `buscar()` y está bien que no lo tenga
+todavía —pero el día que lo agregue, el motivo por el que se elegiría `package_list` es una
+medición de hace cinco días que hoy no se sostiene. `uydatos.catalogo` solo usa `package_show`,
+que es lo que se midió sano en las dos fechas.
+
+**La trampa hermana, esa sí viva:** el catálogo publica datasets cuyos recursos apuntan a URLs
+**ajenas que se caen**. Las cinco ECH del INE (`ine-encuesta-continua-de-hogares-*`, 2012–2017)
+listan sus microdatos como `.RAR` contra `ine.gub.uy/c/document_library/get_file?...`, **sin
+tamaño declarado**, con `CC0 1.0`. No se probaron: si alguno de esos enlaces responde, la ECH
+—el nivel socioeconómico por zona que NG da por inaccesible— cambia de estado. Es una prueba de
+una línea y queda como pendiente declarado, no como conclusión.
+
+## 5. Orden propuesto
+
+| # | Fuente | Estado | Necesidad que cierra | Límite |
+|---|---|---|---|---|
+| 1 | **INUMET** (6 variables) | **hecho** en 0.3.0 | clima en siete estaciones del país, no una | cuatro variables sin medir más allá del encabezado |
+| 2 | **Sanciones DSS** | pendiente | el enforcement del SIPC, y un lector público | PII de terceros; se corta en 2024 |
+| 3 | **Probar las URLs del INE (ECH)** | pendiente, 1 línea | el nivel socioeconómico por zona | puede dar 404: es lo que hay que ver |
+| 4 | **ANCAP cantidad de ventas** | pendiente | el denominador de mercado del combustible | sin consumidor todavía |
+| 5 | **SIPC precios (serie)** | diferido con gate | la serie de precios minoristas | 1 a 2 GB por año |
+
+## 6. Fuentes, fecha y sha256 de lo bajado
+
+Todo se consultó el 09/10/26. Los archivos están en
+`%LOCALAPPDATA%\hermes\cache\scratch\fuentes-nuevas\` y **no se versionan**: son datos de terceros
+con licencia propia, y este repositorio publica código, no datos (ver `.gitignore`).
+
+| Archivo | sha256 | Qué se usó |
+|---|---|---|
+| `inumet_temp.csv` | `ddcd33ddb7c5eca6602e2302728e0ab0baf36c58696a48269ea2441aa18819c4` | 332.070 valores; 8 líneas sin dato; 7 estaciones |
+| `inumet_precip.csv` | `f89d57659d371ef8156ec896b0d4d70ad9f2259bb334a8f863a5a4e4a73c39ce` | 291.085 valores; 11.780 de 12.223 días-UTC con 24 h |
+| `dss_sanciones.csv` | `241a78a15e951bf960f93efc12aebe0d04dc343b24198a2fa4899d1872dd4cd0` | 1.528 resoluciones; corte 2024; 483 por precio |
+| `ancap_ventas.csv` | `2c648ef7eb8446c88ab46e6bbe78dd0e270fcc6566645e73dbb4fbd650dc3f7a` | 1.199 filas; unidades en miles de m³ |
+
+**Sin archivo, citando la respuesta de la API con su fecha:** los conteos de `package_search` y
+`package_list` (§4); los recursos y tamaños por `package_show` (§3); las listas de estaciones y la
+unidad de cada dataset, del metadato JSON de INUMET. Los archivos de NG que se citan
+(`investigaciones/2026-10-03-…`, `2026-10-04-…`) son de otro repositorio y no se copian acá.

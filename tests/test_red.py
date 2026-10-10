@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from uydatos import ancap, bcu, ibge, indec, salto_grande
+from uydatos import ancap, bcu, ibge, indec, inumet, salto_grande
 from uydatos.catalogo import recursos
 
 pytestmark = pytest.mark.red
@@ -45,6 +45,20 @@ def test_ancap_csv(tmp_path):
 
 def test_catalogo_inia_tiene_csv_anuales():
     assert any("ppt_tmax_tmin_sg_" in r["url"] for r in recursos("inia-precipitacion-temps-extremas-sg"))
+
+
+def test_inumet_temperatura_contrato(tmp_path):
+    """El archivo completo de temperatura, con su trampa adentro.
+
+    Medido el 09/10/26: 332.070 valores y **una fila cuyo `estacion_id` es el texto de un error
+    del servidor**. Si el lector empieza a devolver una octava estación, la fuente cambió: hay
+    que mirarla antes de creerle.
+    """
+    ruta = inumet.descargar("temperatura", tmp_path / "inumet_temperatura.csv")
+    serie = inumet.leer_archivo(ruta, inumet.DATASETS["temperatura"][1])
+    assert len(serie) > 300_000
+    assert {f["estacion"] for f in serie} <= set(inumet.ESTACIONES)
+    assert serie[0]["fecha"] < serie[-1]["fecha"]
 
 
 def test_ideuy_edificio_publico_calle_inexistente_y_esquina():
