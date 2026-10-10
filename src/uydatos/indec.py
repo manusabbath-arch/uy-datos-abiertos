@@ -10,8 +10,8 @@ Las trampas, y por qué el lector las corta
    rechazan por nombre.
 2. **GBA no es el país.** La serie de Gran Buenos Aires (`ID_GBA`) es otra serie, con otra
    granularidad; confundirlas no es un error de redondeo.
-3. **La API responde 403 al User-Agent por defecto de Python** (`Python-urllib/*`) y 200 a
-   cualquier otro. `descargar()` declara uno propio.
+3. **La API responde 403 al `User-Agent` por defecto de Python** y 200 a cualquier otro.
+   `descargar()` manda el del paquete.
 
 Y una que el lector se **niega** a hacer: **un índice no es una inflación.** Devuelve el valor
 del índice; convertirlo a inflación mensual es una decisión del análisis, no una lectura.
@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
-from uydatos import USER_AGENT
+from uydatos import red
 
 ID_NACIONAL_VIVA = "148.3_INIVELNAL_DICI_M_26"
 ID_GBA = "148.3_INIVELGBADICI_M_26"
@@ -53,23 +53,19 @@ def _validar_id(id_serie: str) -> None:
     raise IpcInvalido(f"{id_serie}: id desconocido. Los ids declarados son {ID_NACIONAL_VIVA} y {ID_GBA}.")
 
 
-def _pedido(id_serie: str = ID_NACIONAL_VIVA):
-    import urllib.request
-
+def _url(id_serie: str) -> str:
     _validar_id(id_serie)
-    url = f"{URL}?ids={id_serie}&format=json&limit=1000"
-    return urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    return f"{URL}?ids={id_serie}&format=json&limit=1000"
+
+
+def _pedido(id_serie: str = ID_NACIONAL_VIVA):
+    """El pedido armado de la serie. Los tests miran su `User-Agent`; `descargar()` sale por `red.bajar()`."""
+    return red.pedido(_url(id_serie))
 
 
 def descargar(destino: Path, id_serie: str = ID_NACIONAL_VIVA) -> Path:
     """Baja la serie de la API a `destino`. **Única función que sale a la red.**"""
-    import urllib.request
-
-    destino = Path(destino)
-    destino.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(_pedido(id_serie), timeout=60) as r:  # noqa: S310 — host fijo
-        destino.write_bytes(r.read())
-    return destino
+    return red.bajar(_url(id_serie), destino)
 
 
 def leer(ruta: Path, id_serie: str = ID_NACIONAL_VIVA, solo_meta: bool = False) -> Union[list[dict], dict[str, Any]]:

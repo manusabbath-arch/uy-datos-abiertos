@@ -34,6 +34,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional, Sequence
 
+from uydatos import red
+
 WS = "https://www.saltogrande.org/ws.php"
 NS = "https://www.saltogrande.org/ws.php"
 ENCABEZADO_SOAP = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -125,14 +127,12 @@ def estaciones_cerca_de(
     return ranking
 
 
-def _pedido(activas: bool = True):
-    """El pedido SOAP. Declara un User-Agent propio: el servidor responde 403 al de Python
-    (`Python-urllib/*`) y 200 a cualquier otro (medido el 09/10/2026)."""
-    import urllib.request
+CABECERAS_SOAP = {"Content-Type": "text/xml; charset=utf-8", "SOAPAction": f"{NS}/ListaEstacionesTelemetricas"}
 
-    from uydatos import USER_AGENT
 
-    cuerpo = (
+def _sobre(activas: bool) -> bytes:
+    """El cuerpo SOAP de `ListaEstacionesTelemetricas`."""
+    return (
         '<?xml version="1.0" encoding="UTF-8"?>'
         f'<SOAP-ENV:Envelope xmlns:SOAP-ENV="{ENCABEZADO_SOAP}" xmlns:ns1="{NS}">'
         "<SOAP-ENV:Body>"
@@ -140,25 +140,20 @@ def _pedido(activas: bool = True):
         "</ns1:ListaEstacionesTelemetricas>"
         "</SOAP-ENV:Body></SOAP-ENV:Envelope>"
     ).encode("utf-8")
-    return urllib.request.Request(
-        WS,
-        data=cuerpo,
-        headers={
-            "Content-Type": "text/xml; charset=utf-8",
-            "SOAPAction": f"{NS}/ListaEstacionesTelemetricas",
-            "User-Agent": USER_AGENT,
-        },
-    )
+
+
+def _pedido(activas: bool = True):
+    """El pedido SOAP armado. Los tests miran su `User-Agent`; `descargar_lista()` sale por
+    `red.pedir()`. El servidor responde 403 al `User-Agent` por defecto de Python y 200 al del
+    paquete (medido el 09/10/2026)."""
+    return red.pedido(WS, datos=_sobre(activas), cabeceras=CABECERAS_SOAP)
 
 
 def descargar_lista(destino: Path, activas: bool = True) -> Path:
     """Baja la lista de estaciones a `destino`. **Única función que sale a la red.**"""
-    import urllib.request
-
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(_pedido(activas), timeout=90) as r:  # noqa: S310 — host fijo
-        destino.write_bytes(r.read())
+    destino.write_bytes(red.pedir(WS, datos=_sobre(activas), cabeceras=CABECERAS_SOAP))
     return destino
 
 

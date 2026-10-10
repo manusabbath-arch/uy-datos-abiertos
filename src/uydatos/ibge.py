@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
-from uydatos import USER_AGENT
+from uydatos import red
 
 URL = "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/all"
 VARIABLE = "2266"
@@ -62,20 +62,13 @@ def leer(ruta: Path) -> list[dict]:
 
 
 def _pedido():
-    import urllib.request
-
-    return urllib.request.Request(URL, headers={"User-Agent": USER_AGENT})
+    """El pedido armado. Los tests miran su `User-Agent`; `descargar()` sale por `red.bajar()`."""
+    return red.pedido(URL)
 
 
 def descargar(destino: Path) -> Path:
     """Baja la serie completa a `destino`. **Única función que sale a la red.**"""
-    import urllib.request
-
-    destino = Path(destino)
-    destino.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(_pedido(), timeout=90) as r:  # noqa: S310 — host fijo
-        destino.write_bytes(r.read())
-    return destino
+    return red.bajar(URL, destino)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

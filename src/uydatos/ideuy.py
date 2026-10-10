@@ -40,8 +40,9 @@ import math
 import re
 import sys
 import unicodedata
-import urllib.parse
 from typing import Optional, Sequence
+
+from uydatos import red
 
 URL_V0 = "https://direcciones.ide.uy/api/v0/geocode/BusquedaDireccion"
 URL_V1 = "https://direcciones.ide.uy/api/v1/geocode/direcUnica"
@@ -114,7 +115,7 @@ def misma_calle(pedida: str, devuelta: str) -> bool:
 
 
 def url_v0(direccion: str, localidad: str = "", departamento: str = "") -> str:
-    params = urllib.parse.urlencode({"calle": direccion, "localidad": localidad, "departamento": departamento})
+    params = red.codificar({"calle": direccion, "localidad": localidad, "departamento": departamento})
     return f"{URL_V0}?{params}"
 
 
@@ -123,7 +124,7 @@ def url_v1(direccion: str, localidad: str = "", departamento: str = "") -> str:
     la avenida. Por eso la ' Y ' viaja como ' ESQ '."""
     direccion = re.sub(r"\s+Y\s+", " ESQ ", direccion, flags=re.IGNORECASE)
     partes = [p for p in (direccion, localidad, departamento, "Uruguay") if p]
-    return f"{URL_V1}?{urllib.parse.urlencode({'q': ', '.join(partes)})}"
+    return f"{URL_V1}?{red.codificar({'q': ', '.join(partes)})}"
 
 
 def coordenadas_v0(item: dict) -> Optional[tuple[float, float]]:
@@ -198,13 +199,8 @@ def distancia_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def _consultar(url: str) -> list:
-    import urllib.request
-
-    from uydatos import USER_AGENT
-
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=30) as r:  # noqa: S310 — host fijo
-        datos = json.loads(r.read().decode("utf-8"))
+    """Una consulta a IDE.uy. **Sale a la red.** Los tests la reemplazan con `monkeypatch`."""
+    datos = json.loads(red.pedir(url, timeout=30).decode("utf-8"))
     return datos if isinstance(datos, list) else []
 
 

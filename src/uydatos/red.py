@@ -14,6 +14,7 @@ import argparse
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Optional, Sequence
@@ -31,6 +32,28 @@ def _abrir(pedido: urllib.request.Request, timeout: int):
     return urllib.request.urlopen(pedido, timeout=timeout)  # noqa: S310 - la URL la fija el lector
 
 
+def pedido(
+    url: str,
+    *,
+    datos: Optional[bytes] = None,
+    cabeceras: Optional[dict[str, str]] = None,
+) -> urllib.request.Request:
+    """El `Request` con el `User-Agent` del paquete, sin salir a la red.
+
+    Lo usan los lectores que necesitan el objeto armado (los tests miran su `User-Agent`); quien
+    sale de verdad es `pedir()`.
+    """
+    return urllib.request.Request(url, data=datos, headers={"User-Agent": USER_AGENT, **(cabeceras or {})})
+
+
+def codificar(params: dict[str, str]) -> str:
+    """El query string de `params`, como lo espera una URL. No sale a la red.
+
+    Vive acá para que ningun lector le hable a `urllib` ni para armar la dirección.
+    """
+    return urllib.parse.urlencode(params)
+
+
 def pedir(
     url: str,
     *,
@@ -43,13 +66,13 @@ def pedir(
     Un 4xx **no** se reintenta: la URL o el recurso estan mal y esperar no los arregla. Todo lo
     demas (5xx, DNS, corte de conexion) se reintenta con una espera creciente.
     """
-    pedido = urllib.request.Request(url, data=datos, headers={"User-Agent": USER_AGENT, **(cabeceras or {})})
+    req = pedido(url, datos=datos, cabeceras=cabeceras)
     ultimo: Optional[Exception] = None
     for intento in range(INTENTOS):
         if intento:
             time.sleep(ESPERA * intento)
         try:
-            with _abrir(pedido, timeout) as r:
+            with _abrir(req, timeout) as r:
                 return r.read()
         except urllib.error.HTTPError as e:
             if 400 <= e.code < 500:

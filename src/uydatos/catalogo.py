@@ -15,6 +15,8 @@ import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
+from uydatos import red
+
 API = "https://catalogodatos.gub.uy/api/3/action/package_show"
 
 
@@ -43,29 +45,13 @@ def parsear_package_show(crudo: dict) -> list[dict]:
 
 def recursos(dataset: str) -> list[dict]:
     """Los recursos vigentes de un dataset. **Sale a la red.**"""
-    import urllib.parse
-    import urllib.request
-
-    from uydatos import USER_AGENT
-
-    url = f"{API}?{urllib.parse.urlencode({'id': dataset})}"
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=60) as r:  # noqa: S310 — host fijo
-        return parsear_package_show(json.loads(r.read().decode("utf-8")))
+    url = f"{API}?{red.codificar({'id': dataset})}"
+    return parsear_package_show(json.loads(red.pedir(url).decode("utf-8")))
 
 
 def bajar_recurso(url: str, destino: Path) -> Path:
     """Baja un recurso a `destino`. **Sale a la red.**"""
-    import urllib.request
-
-    from uydatos import USER_AGENT
-
-    destino = Path(destino)
-    destino.parent.mkdir(parents=True, exist_ok=True)
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=90) as r:  # noqa: S310 — URL del catálogo
-        destino.write_bytes(r.read())
-    return destino
+    return red.bajar(url, destino)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

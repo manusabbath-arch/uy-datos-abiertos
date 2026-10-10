@@ -40,6 +40,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional, Sequence
 
+from uydatos import red
+
 URL = "https://cotizaciones.bcu.gub.uy/wscotizaciones/servlet/awsbcucotizaciones"
 
 MONEDAS = {
@@ -179,8 +181,6 @@ def descargar(moneda: int, desde: str, hasta: str, destino: Path) -> list[Path]:
     debería cambiar, y si cambia conviene verlo comparando, no sobreescribiendo. El mes en
     curso queda parcial: para completarlo, borrar ese archivo y volver a bajarlo.
     """
-    import urllib.request
-
     if moneda not in MONEDAS:
         raise BcuInvalido(f"moneda {moneda} no declarada en MONEDAS")
     destino = Path(destino)
@@ -190,16 +190,15 @@ def descargar(moneda: int, desde: str, hasta: str, destino: Path) -> list[Path]:
         p = destino / f"{moneda}_{ini:%Y-%m}.xml"
         if p.exists():
             continue
-        pedido = urllib.request.Request(
+        cuerpo = red.pedir(
             URL,
-            data=_sobre(moneda, ini, fin),
-            headers={
+            datos=_sobre(moneda, ini, fin),
+            cabeceras={
                 "Content-Type": "text/xml; charset=utf-8",
                 "SOAPAction": "Cotizaaction/AWSBCUCOTIZACIONES.Execute",
             },
         )
-        with urllib.request.urlopen(pedido, timeout=60) as r:  # noqa: S310 — host fijo
-            p.write_bytes(r.read())
+        p.write_bytes(cuerpo)
         escritos.append(p)
     return escritos
 

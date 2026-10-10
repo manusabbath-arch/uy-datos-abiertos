@@ -32,6 +32,8 @@ import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
+from uydatos import red
+
 DATASET = "ancap-precio-combustible-pe"
 URL_CSV = (
     "https://catalogodatos.gub.uy/dataset/556beb30-02fc-4d06-909a-f42083c89ef7/resource/"
@@ -157,16 +159,7 @@ def descargar(destino: Path, url: str = URL_CSV) -> Path:
 
     Si la URL del recurso cambia, `uydatos.catalogo.recursos(DATASET)` da la vigente.
     """
-    import urllib.request
-
-    from uydatos import USER_AGENT
-
-    destino = Path(destino)
-    destino.parent.mkdir(parents=True, exist_ok=True)
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=90) as r:  # noqa: S310 — host fijo
-        destino.write_bytes(r.read())
-    return destino
+    return red.bajar(url, destino)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
