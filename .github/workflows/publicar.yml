@@ -1,0 +1,27 @@
+name: publicar
+
+# Se dispara al publicar una Release en GitHub. PyPI confía en este workflow
+# (trusted publishing): no hay tokens ni contraseñas guardadas en el repo.
+on:
+  release:
+    types: [published]
+
+jobs:
+  pypi:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: La etiqueta coincide con la versión del paquete
+        run: |
+          version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          test "v$version" = "${GITHUB_REF_NAME}" || { echo "etiqueta ${GITHUB_REF_NAME} != versión $version"; exit 1; }
+      - name: Tests
+        run: uv run --python 3.13 --with pytest --with-editable . pytest -q
+      - name: Construir
+        run: uv build && uvx twine check dist/*
+      - name: Publicar en PyPI
+        run: uv publish --trusted-publishing always

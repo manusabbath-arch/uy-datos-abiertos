@@ -1,10 +1,21 @@
 [project]
 name = "uydatos"
-version = "0.2.0"
+version = "0.2.1"
 description = "Lectores estrictos de datos públicos de Uruguay y la región: BCU, ANCAP, INIA, Salto Grande, INDEC, IBGE, IDE.uy, RUT y cédula."
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Manu Martinez" }]
+keywords = ["uruguay", "datos-abiertos", "open-data", "bcu", "ide-uy", "rut"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Spanish",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
+]
 requires-python = ">=3.10"
 dependencies = []
 
@@ -33,3 +44,4 @@ select = ["E", "F", "I", "W"]
 
 [project.urls]
 Repository = "https://github.com/manusabbath-arch/uy-datos-abiertos"
+Changelog = "https://github.com/manusabbath-arch/uy-datos-abiertos/blob/main/CHANGELOG.md"

@@ -1,5 +1,15 @@
 # uydatos
 
+[![tests](https://github.com/manusabbath-arch/uy-datos-abiertos/actions/workflows/tests.yml/badge.svg)](https://github.com/manusabbath-arch/uy-datos-abiertos/actions/workflows/tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/uydatos)](https://pypi.org/project/uydatos/)
+[![Python](https://img.shields.io/pypi/pyversions/uydatos)](https://pypi.org/project/uydatos/)
+[![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
+
+> **In English:** strict, dependency-free Python readers for Uruguayan and regional public data
+> (Central Bank of Uruguay exchange rates, ANCAP fuel prices, INIA weather, Salto Grande river
+> stations, Argentina's CPI, Brazil's IPCA, IDE.uy geocoding, RUT/ID check digits). Each reader
+> documents its source's traps and **raises instead of silently fixing** bad data.
+
 Lectores **estrictos** de datos públicos de Uruguay y la región, en Python puro (sin
 dependencias).
 
@@ -25,7 +35,7 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 ## Instalación
 
 ```sh
-pip install git+https://github.com/manusabbath-arch/uy-datos-abiertos
+pip install uydatos
 ```
 
 Requiere Python 3.10 o posterior.

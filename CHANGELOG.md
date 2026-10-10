@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.2.1 — 2026-10-09
+
+- Publicado en PyPI: `pip install uydatos`. Se publica solo al crear una Release en GitHub, con
+  trusted publishing (sin tokens).
+- Marcado como paquete tipado (`py.typed`), con clasificadores y palabras clave.
+- Insignias y un resumen en inglés en el README.
+
 ## 0.2.0 — 2026-10-09
 
 - **Nuevo: `uydatos.ideuy`**, geocodificación de direcciones uruguayas con la API pública de IDE.uy.
