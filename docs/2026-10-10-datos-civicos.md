@@ -141,15 +141,30 @@ JSON por mes de llamados (`l-MM`) y de adjudicaciones (`a-MM`), en el estándar 
 
 ### Las trampas
 
-1. **El formato declarado no es el del archivo**: «JSON» en el catálogo, ZIP en el disco.
+0. **El total del año está dominado por registros imposibles.** Un solo ítem de UTE —«colocación de
+   alambrado de ley 7 hilos», 850.000 × 461.611— suma 392.369 millones de pesos: **el 77% de todo lo
+   adjudicado en pesos en 2024**. En 2025, otro ítem de UTE —«suministro, obra civil, montaje y
+   desmontaje», 798.848,2 × 88.760,8— es el **53%**. Hay ítems con el monto cargado en la cantidad y
+   precio 1, y unidades «%». No se sabe cuál es el valor real, así que no se corrige: se muestra. **Un
+   total anual de compras sacado de estos archivos, sin mirar los mayores ítems, es casi todo error de
+   carga.** A confirmar con la ARCE.
+1. **El formato declarado no es el del archivo**: «JSON» en el catálogo, ZIP en el disco, y **su
+   estructura cambia entre años** (en 2025 los JSON están en una carpeta `2025/`, en 2024 sueltos).
 2. **El importe es el precio unitario, no el total.** Solo 1.005 adjudicaciones traen un total;
    **222.616 ítems tienen cantidad distinta de 1**. Sumar `unit.value.amount` subestima el gasto.
 3. **Las monedas están mezcladas**: pesos, dólares, euros, **Unidades Indexadas** (`UYI`), reales,
    francos suizos, rands, y **11.221 ítems sin moneda**. Sumar sin convertir no tiene sentido;
    convertir necesita la cotización del día (`uydatos.bcu`).
-4. **3.146 registros son anulaciones de adjudicaciones** (`awardCancellation`): sumarlos cuenta
-   gasto que no ocurrió.
-5. **4.151 adjudicaciones no tienen proveedor.**
+4. **El archivo de adjudicaciones trae también llamados (1.005) y anulaciones (3.146).** Las
+   anulaciones **no apuntan a ninguna adjudicación publicada** —ni en 2024 ni en 2025 comparten
+   `ocid` con una— y no traen importes: son procedimientos que terminaron sin adjudicar. El riesgo es
+   contarlas como compras. Lo que sí hay que excluir son las adjudicaciones con estado `cancelled`,
+   `unsuccessful` o `pending`. (La primera versión de este documento decía que sumar las anulaciones
+   contaba gasto que no ocurrió; no traen importes.)
+5. **Los únicos totales del archivo son los montos estimados de los llamados**; ninguna adjudicación
+   trae un total.
+6. **Hay adjudicaciones sin comprador en ningún campo** (96 en 2024, 53 en 2025) y **sin proveedor**
+   (4.151 en 2025).
 
 ### Datos personales
 
@@ -184,7 +199,7 @@ internacional de Open Contracting.
 | Orden | Qué | Por qué primero | Riesgo de datos personales |
 |---|---|---|---|
 | 1 | **`uydatos.elecciones`** y una herramienta MCP de resultados por departamento | Es lo que más público trae, los datos están completos y bien formados, y las trampas son pocas y medibles. **Hecho en 0.5.0.** | Bajo, si no se lee la integración de las hojas |
-| 2 | **`uydatos.compras`** (OCDS): total = cantidad × precio, anulaciones fuera, monedas convertidas con el BCU | Es el dato con más valor periodístico y el que peor se lee sin ayuda | Medio: decidir qué se expone de personas físicas |
+| 2 | **`uydatos.compras`** (OCDS): total = cantidad × precio, solo adjudicaciones activas, monedas convertidas con el BCU, mayores ítems siempre a la vista. **Hecho en 0.7.0.** | Es el dato con más valor periodístico y el que peor se lee sin ayuda | Medio: decidir qué se expone de personas físicas |
 | 3 | **`uydatos.parlamento`**: asistencias, proyectos y leyes por legislatura | Bien formado, histórico largo | Bajo |
 
 Para la comunicación, cada trampa de este documento es una nota corta posible: *«por qué sumar las

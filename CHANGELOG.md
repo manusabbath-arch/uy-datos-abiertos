@@ -1,7 +1,16 @@
 # Cambios
 
-## Sin publicar
+## 0.7.0 — 2026-10-10
 
+- **Nuevo: `uydatos.compras`**, las adjudicaciones del Estado (ARCE, OCDS 1.1) desde 2002: organismo,
+  ítems, cantidad, precio y moneda, con totales por moneda y `convertir()` a pesos con la cotización
+  del día. Trampas medidas sobre 2024 y 2025: el catálogo lo declara JSON y es un ZIP cuya estructura
+  cambia entre años; el total es cantidad × precio; hay llamados y anulaciones mezclados con las
+  adjudicaciones (las anulaciones no apuntan a ninguna adjudicación publicada); solo las `active`
+  son gasto; hay adjudicaciones sin comprador o sin proveedor. Y la más importante: **el total del año
+  está dominado por registros imposibles** —un ítem es el 77% de lo adjudicado en pesos en 2024, otro
+  el 53% en 2025—, así que `resumen()` devuelve siempre los mayores ítems con su peso y su `ocid`.
+- `uydatos.bcu` suma euro (1111), franco suizo (5900) y rand (1620).
 - **Nuevo: `uydatos.hojas`**, para leer planillas XLSX y XLS. El motor se elige por **la firma del
   archivo** y no por el `formato` que declara el catálogo, que miente: de 24 recursos declarados
   `XLS`, **23 son en realidad XLSX** y el único `.xls` de verdad de la muestra es el de AGESIC.
@@ -13,8 +22,6 @@
   se puede bajar y lo que no (los `.xls` de la ECH del INE viven en el sitio viejo del INE, con el
   certificado roto, así que leer `.xls` no la destraba por sí solo).
 - **Corregido en el README**: `uydatos.mides` no estaba en la tabla de módulos.
-
-Sumar un módulo pide **0.7.0** cuando se publique.
 
 ## 0.6.0 — 2026-10-10
 

@@ -7,6 +7,7 @@ serie creíble pero falsa. La única función de cada módulo que sale a interne
 
 Módulos:
 
+- `compras`      — compras del Estado (ARCE, OCDS): adjudicaciones, importes por moneda y concentración.
 - `elecciones`   — resultados de la Corte Electoral por mesa, con las mesas de observados aparte.
 - `bcu`          — cotizaciones del Banco Central del Uruguay (dólar, UI, peso argentino, real).
 - `ancap`        — precios máximos de combustibles fijados por el Poder Ejecutivo.

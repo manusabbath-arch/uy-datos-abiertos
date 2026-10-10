@@ -16,6 +16,7 @@ from uydatos import (
     ancap,
     bcu,
     catalogo,
+    compras,
     elecciones,
     hojas,
     ibge,
@@ -200,3 +201,10 @@ def test_hojas_el_xlsx_de_un_indicador_de_mides(tmp_path):
     assert datos[0] == ["Funciones GPS_fg", "año", "valor"]
     assert isinstance(datos[1][2], (int, float)), "los números vienen tipados, no como texto"
     assert hojas.leer(destino, "Metadatos")[0] == ["nombreDeAtributo", "descripcion", "tipoDeDato"]
+
+
+def test_compras_2025_se_lee_y_muestra_su_concentracion(tmp_path):
+    adjs = compras.leer_adjudicaciones(compras.descargar(2025, tmp_path / "c.zip"))
+    s = compras.resumen(adjs)
+    assert s["adjudicaciones"] > 100_000 and "UYU" in s["importes"]
+    assert s["mayores_items"] and s["concentracion_uyu"]["mayor_item_pct"] > 0
