@@ -117,7 +117,24 @@ Proyectos entrados: ~1.000 por legislatura con fecha, asunto, carpeta y título.
 ### Las trampas
 
 1. **Todos los recursos de un dataset tienen la misma URL final: `csv`.** Quien los guarda por el
-   nombre de la URL pisa una legislatura con otra (le pasó a la medición de este documento).
+   nombre de la URL pisa una legislatura con otra (le pasó a la medición de este documento, dos
+   veces: la segunda, el script cortaba el nombre del dataset y las asistencias del Senado pisaron a
+   las de Diputados, lo que por un momento pareció un error de la fuente).
+1b. **Hay 3 a 4 veces más personas que bancas**: 336 a 424 filas por legislatura en Diputados (99
+   bancas), unas 110 en el Senado (31). Son los suplentes, muchos con una o dos citaciones: un
+   ranking de asistencia sin un mínimo de citaciones compara 2 con 364.
+1c. **No hay identificador de persona.** En cada legislatura hay de 1 a 3 nombres repetidos, con
+   citaciones distintas: pueden ser dos períodos de la misma persona o dos personas («Pérez, Julio»).
+   No se pueden unir ni separar con certeza.
+1d. **Filas sin nombre** (`","`) con citaciones, en Diputados 49 y 50.
+1e. Lo que sí cierra siempre: **citaciones = asistencias + faltas con aviso + faltas sin aviso**, en
+   las 10 legislaturas; las licencias van aparte. El lector lo exige.
+1f. **311 proyectos aparecen en dos legislaturas** con el mismo número de asunto: 8.880 filas son
+   8.569 proyectos.
+1g. **Leyes**: 4.799 filas son 4.796 leyes —de la 15.736 a la 20.531, sin huecos—, más 2 filas
+   duplicadas y una «ley 0» (una pensión graciable de 1997). Las columnas `Leyes_Referenciadas` y
+   `Leyes_que_referencia` son cantidades. El catálogo dice que el archivo se actualizó el 21/06/2024
+   y llega a octubre de 2026.
 2. **La nómina de diputados trae `Apellido, Nombre` con la coma sin comillas**: el nombre se parte
    en dos columnas y las filas tienen 7 u 8 campos según la persona.
 3. **Codificaciones mezcladas en el mismo dataset**: los datos en UTF-8 y el archivo de metadatos en
@@ -200,7 +217,7 @@ internacional de Open Contracting.
 |---|---|---|---|
 | 1 | **`uydatos.elecciones`** y una herramienta MCP de resultados por departamento | Es lo que más público trae, los datos están completos y bien formados, y las trampas son pocas y medibles. **Hecho en 0.5.0.** | Bajo, si no se lee la integración de las hojas |
 | 2 | **`uydatos.compras`** (OCDS): total = cantidad × precio, solo adjudicaciones activas, monedas convertidas con el BCU, mayores ítems siempre a la vista. **Hecho en 0.7.0.** | Es el dato con más valor periodístico y el que peor se lee sin ayuda | Medio: decidir qué se expone de personas físicas |
-| 3 | **`uydatos.parlamento`**: asistencias, proyectos y leyes por legislatura | Bien formado, histórico largo | Bajo |
+| 3 | **`uydatos.parlamento`**: asistencias, proyectos y leyes por legislatura. **Hecho en 0.8.0.** | Bien formado, histórico largo | Bajo |
 
 Para la comunicación, cada trampa de este documento es una nota corta posible: *«por qué sumar las
 mesas no da el resultado oficial»*, *«el gasto del Estado no es la suma de los importes»*.

@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.8.0 — 2026-10-10
+
+- **Nuevo: `uydatos.parlamento`**: asistencias del Senado y de Diputados por legislatura (46 a 50),
+  proyectos entrados (42 a 50, desde 1985) y leyes promulgadas. Trampas medidas: todos los recursos
+  terminan en la URL `csv` (la legislatura sale del título); hay 3 a 4 veces más personas que bancas,
+  por los suplentes, así que `resumen_asistencias` exige un mínimo de citaciones; no hay identificador
+  de persona y los homónimos no se unen; hay filas sin nombre; 311 proyectos están en dos
+  legislaturas; las leyes traen 2 filas duplicadas y una «ley 0», y la fecha del catálogo no dice de
+  cuándo es el dato. Se exige que citaciones = asistencias + faltas, que se cumple en las 10
+  legislaturas.
+
 ## 0.7.0 — 2026-10-10
 
 - **Nuevo: `uydatos.compras`**, las adjudicaciones del Estado (ARCE, OCDS 1.1) desde 2002: organismo,

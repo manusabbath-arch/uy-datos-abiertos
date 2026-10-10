@@ -25,6 +25,7 @@ from uydatos import (
     inumet,
     limites,
     mides,
+    parlamento,
     red,
     salto_grande,
 )
@@ -208,3 +209,10 @@ def test_compras_2025_se_lee_y_muestra_su_concentracion(tmp_path):
     s = compras.resumen(adjs)
     assert s["adjudicaciones"] > 100_000 and "UYU" in s["importes"]
     assert s["mayores_items"] and s["concentracion_uyu"]["mayor_item_pct"] > 0
+
+
+def test_parlamento_senado_actual_y_leyes(tmp_path):
+    asis = parlamento.leer_asistencias(parlamento.descargar("asistencias-senado", tmp_path / "s.csv", 50))
+    assert len(asis) > 31
+    leyes = parlamento.leer_leyes(parlamento.descargar("leyes", tmp_path / "l.csv"))
+    assert len(leyes["leyes"]) > 4700 and leyes["faltantes"] == []

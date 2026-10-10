@@ -26,6 +26,7 @@ from uydatos import (
     inumet,
     limites,
     mides,
+    parlamento,
     red,
     salto_grande,
 )
@@ -44,6 +45,7 @@ LECTORES = {
     "inumet": inumet,
     "limites": limites,
     "mides": mides,
+    "parlamento": parlamento,
     "red": red,
     "salto_grande": salto_grande,
 }
