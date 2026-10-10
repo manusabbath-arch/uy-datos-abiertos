@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from uydatos import ancap, bcu, ibge, indec, inumet, salto_grande
+from uydatos import ancap, bcu, catalogo, ibge, indec, inumet, salto_grande
 from uydatos.catalogo import recursos
 
 pytestmark = pytest.mark.red
@@ -85,3 +85,17 @@ def test_ideuy_edificio_publico_calle_inexistente_y_esquina():
         "esquina",
         "calle_sin_numero",
     )
+
+
+@pytest.mark.red
+def test_buscar_mides_devuelve_mil_ochocientos_setenta_y_cinco():
+    """Medido el 2026-10-09. Si este numero se mueve, el catalogo cambio: hay que volver a mirar."""
+    assert catalogo.buscar("", organizacion="mides")["total"] == 1875
+
+
+@pytest.mark.red
+def test_el_datastore_de_inumet_se_puede_consultar_sin_bajar_el_archivo():
+    """Medido el 2026-10-09: `total` 332.071 e incluye la fila del encabezado."""
+    r = catalogo.datastore_search("f800fc53-556b-4d1c-8bd6-28b41f9cf146", limite=2)
+    assert r["total"] == 332071
+    assert "temp_aire" in r["campos"]
