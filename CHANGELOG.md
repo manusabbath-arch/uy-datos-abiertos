@@ -1,5 +1,20 @@
 # Cambios
 
+## 0.10.0 — 2026-10-11
+
+- **Nuevo: `uydatos.observatorio`**, los indicadores sociales del MIDES leídos de su página viva en
+  gub.uy, con la ficha (unidad, fuente, forma de cálculo, período). **Por qué no alcanzaba
+  `uydatos.mides`: la copia del catálogo quedó congelada en 2019** —medido sobre 60 indicadores: los
+  57 legibles tienen `metadata_modified` de 2019, su último dato es de 2011 a 2017, y el único que
+  llega a 2025 es una proyección; 3 no tienen recursos—, mientras la página viva llega a 2024. La
+  lista sale del sitemap (1.264 indicadores). Trampas medidas sobre 159 páginas: la tabla está
+  siempre y el gráfico no; las páginas de formato viejo usan punto decimal y una tenía la tabla
+  desordenada, así que **se rechazan**; `-` y `.` son «sin dato»; una dimensión puede no tener
+  filtro y aparecer entre las opciones de años; hay celdas con basura (`@`, `HOJA127b`) que hacen
+  rechazar la página; 2 tablas traen columnas sin encabezado llenas de ceros; las filas «Total» van
+  mezcladas (103 de 150); los mapas por departamento muestran un solo año (se marca `parcial`); la
+  ficha dice otro año de fin que la tabla en 20 de 150. Lee 150 de 159.
+
 ## 0.9.0 — 2026-10-10
 
 - **Nuevo: `uydatos.ancap_ventas`**, la cantidad de ventas de combustibles por mercado, producto y

@@ -1,5 +1,9 @@
 """Indicadores de MIDES: una familia de 1.869 CSV con la misma forma.
 
+**Esta copia quedó congelada en 2019** (medido el 11/10/2026: 57 de 57 indicadores con
+`metadata_modified` de 2019, último dato entre 2011 y 2017). Para el dato vigente, que llega a 2024,
+usar `uydatos.observatorio`, que lee la página viva de cada indicador.
+
 La organizacion `mides` del catalogo publica 1.875 datasets, y **1.869 son indicadores**
 (`mides-indicador-NNNNN`, numerados del 2718 al 14093). Los otros seis no son de esta familia:
 cuatro encuestas ENDIS y dos paneles.

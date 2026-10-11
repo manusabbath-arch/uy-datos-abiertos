@@ -38,6 +38,7 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 | `uydatos.rut` | Offline | Dígito verificador de RUT y cédula | Excel convierte el RUT en float y se come el cero inicial. |
 | `uydatos.semanas` | Offline | Semanas ISO 8601 (`W41`) | El 01/01/2027 es la `2026-W53`. |
 | `uydatos.catalogo` | catalogodatos.gub.uy (CKAN) | URLs vigentes de los recursos de un dataset | Las URLs de descarga cambian cuando el organismo resube un archivo. |
+| `uydatos.observatorio` | MIDES, Observatorio Social en gub.uy | Los 1.264 indicadores sociales vivos (pobreza, empleo, educación, vivienda...), con su ficha: unidad, fuente y forma de cálculo | **La copia del catálogo quedó en 2019**; la página viva llega a 2024. Dos formatos de número (las páginas viejas usan punto decimal y se rechazan), `-` y `.` son «sin dato», las filas «Total» van mezcladas y los mapas por departamento muestran un solo año. |
 | `uydatos.mides` | MIDES, catálogo de datos abiertos | Los 1.869 indicadores de la organización, todos con la misma forma: dimensión libre y `año, valor` al final | El CSV viene en **cp1252**, no en UTF-8: leerlo mal convierte la `ñ` en basura y no falla. |
 | `uydatos.hojas` | El archivo que le des (opcional: `openpyxl` y `xlrd`) | Las filas de una hoja de cálculo XLSX o XLS, con los valores ya tipados | El `formato` que declara el catálogo miente: **23 de 24** recursos «XLS» son XLSX. El motor sale de la firma del archivo, no del metadato. |
 

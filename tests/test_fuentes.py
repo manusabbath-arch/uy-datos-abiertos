@@ -27,6 +27,7 @@ from uydatos import (
     inumet,
     limites,
     mides,
+    observatorio,
     parlamento,
     red,
     salto_grande,
@@ -280,3 +281,17 @@ def test_ancap_ventas_el_csv_del_catalogo(tmp_path):
     por_mercado = {m: u.get("Miles de m3", 0) for m, u in r["por_mercado"].items()}
     assert max(por_mercado, key=por_mercado.get) == "INTERNO"
     assert any(c["faltan"] for c in r["cobertura"].values()), "la ventana móvil dejó un año completo"
+
+
+def test_observatorio_el_sitemap_y_una_pagina_viva():
+    """Medido el 11/10/26: 1.264 indicadores en el sitemap; la tasa de actividad por sexo llega a 2024.
+
+    La copia del catálogo (`uydatos.mides`) quedó en 2019: si esta página deja de pasar de 2019, el
+    motivo de este módulo desapareció y hay que volver a mirar.
+    """
+    slugs = observatorio.indice()
+    assert len(slugs) > 1000
+    assert "tasa-actividad-segun-sexo-total-pais" in slugs
+    r = observatorio.leer("tasa-actividad-segun-sexo-total-pais")
+    assert r["dimensiones"] == ["Sexo"] and r["unidad"]
+    assert max(int(p) for p in r["periodos"]) >= 2024
