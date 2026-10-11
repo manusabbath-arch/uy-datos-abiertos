@@ -1,5 +1,19 @@
 # Cambios
 
+## 0.12.0 — 2026-10-11
+
+- **`uydatos.parlamento` suma los pedidos de informes de Diputados y la nómina**: `leer_pedidos`,
+  `leer_nomina`, `identificar` y `resumen_pedidos`. Los pedidos (artículo 118 de la Constitución)
+  vienen uno por uno, con organismo, autores, tema, estado y los enlaces al oficio y la respuesta:
+  2.532 en la legislatura 50. Trampas medidas: la metadata dice dos estados y hay cuatro; «SIN
+  CONTESTAR» incluye 115 pedidos con más de 45 días que no figuran como vencidos; no hay fecha de
+  respuesta; los coautores van separados por `+` y la metadata lo deja trunco; 242 contestados sin
+  enlace a la respuesta; y **la tasa de respuesta cae con la antigüedad** (92,5% de los pedidos del
+  primer semestre de 2025, 31,9% de los del segundo de 2026), así que la comparación entre
+  organismos se hace por cohorte (`presentados_hasta`) y sobre los pedidos con el plazo cumplido.
+  La nómina identifica a 131 de 133 autores sin ambigüedad; **la edad no se lee**.
+- `python -m uydatos.parlamento bajar` acepta los datasets de un solo archivo sin legislatura.
+
 ## 0.11.0 — 2026-10-11
 
 - **Nuevo: `uydatos.ursea`**, el precio de paridad de importación (PPI) de los combustibles que

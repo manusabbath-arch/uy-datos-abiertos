@@ -1,4 +1,4 @@
-"""Parlamento del Uruguay: asistencias de las dos cámaras, proyectos entrados y leyes promulgadas.
+"""Parlamento del Uruguay: asistencias, proyectos, leyes, pedidos de informes y nómina de Diputados.
 
 El catálogo publica un archivo por legislatura: asistencias del Senado y de Diputados de la 46 (2005)
 a la 50 (la actual), proyectos entrados de la 42 (1985) a la 50, y un único archivo de leyes
@@ -25,8 +25,45 @@ Las trampas, medidas el 10/10/2026
    que el archivo se actualizó el 21/06/2024 cuando llega a octubre de 2026: la fecha del catálogo no
    dice de cuándo es el dato.
 
+Pedidos de informes y nómina (medidos el 11/10/2026)
+---------------------------------------------------
+El pedido de informes es la herramienta de control del artículo 118 de la Constitución: un legislador
+pide datos a un organismo, y la Ley 17.673 le da 45 días para contestar. El dataset
+`crr-pedidos-de-informes` trae **cada pedido de Diputados** de la legislatura 50 (2.532, del 17/02/2025
+al 08/10/2026, sha256 `aa6ebb5f…`): organismo, fecha, autores, tema, estado y los enlaces al oficio y a
+la respuesta (una muestra de 30, todos PDF que responden). El Senado publica sólo totales.
+
+9. **La metadata dice que el estado es «Contestado o No contestado»** y el archivo trae cuatro:
+   CONTESTADO (1.726), VENCIDO (478), SIN CONTESTAR (281) y NO ENTREGADO (47). Un estado nuevo se
+   rechaza: cambia lo que significa el total.
+10. **«SIN CONTESTAR» no es «dentro del plazo»**: de 281, 166 tienen 45 días o menos y **115 tienen
+    más** (hasta 227) sin figurar como vencidos; los VENCIDO tienen todos 67 días o más. No se
+    reclasifica nada: se publica el estado tal cual y, aparte, la antigüedad, para que el porcentaje de
+    respuesta se pueda calcular **sólo sobre los pedidos con el plazo ya cumplido**.
+11. **No hay fecha de respuesta**: se sabe si un organismo contestó, no cuánto tardó.
+12. **Los coautores vienen separados por `+`**, y la metadata lo deja trunco («separados por »): 63
+    pedidos tienen de 2 a 4 autores. Un pedido con tres autores es **un** pedido, no tres.
+10b. **La tasa de respuesta depende de la antigüedad del pedido**: de los presentados en el primer
+    semestre de 2025 está contestado el 92,5%; de los del segundo de 2026, el 31,9%. Las respuestas
+    siguen llegando después del plazo (un VENCIDO puede pasar a CONTESTADO), así que comparar
+    organismos con pedidos de edades distintas es injusto. `resumen_pedidos` devuelve la tasa por
+    **semestre de presentación** y acepta `presentados_hasta` para comparar una misma cohorte.
+13. **242 pedidos CONTESTADO no tienen el enlace a la respuesta.** Se cuentan como contestados (es lo
+    que dice la fuente) y se informan aparte.
+14. **16 pares de pedidos repetidos** (mismo organismo, fecha, autor y tema) con oficios distintos: son
+    pedidos distintos y se cuentan; se informan.
+15. **El organismo es por donde se canaliza el pedido**: 21 valores, casi todos ministerios. Un pedido
+    sobre UTE figura en el Ministerio de Industria.
+16. **La nómina no trae identificador**: el nombre va como «APELLIDOS, NOMBRES» y en los pedidos como
+    «Nombres Apellidos». `identificar()` une un autor con una persona sólo si **todas** sus palabras
+    están en un único nombre de la nómina: 131 de 133 autores (2.622 de 2.630 menciones). Los otros
+    dos no están en la nómina, que es de diciembre de 2025, y quedan sin identificar: no se adivinan.
+    La nómina trae la edad: **no se lee**, porque este control no la necesita.
+
 Uso:
     python -m uydatos.parlamento bajar asistencias-senado 50 datos/senado50.csv
+    python -m uydatos.parlamento bajar pedidos-informes datos/pedidos.csv
+    python -m uydatos.parlamento pedidos datos/pedidos.csv --nomina datos/nomina.csv
     python -m uydatos.parlamento asistencias datos/senado50.csv --minimo 10
 """
 
@@ -49,7 +86,16 @@ DATASETS = {
     "asistencias-diputados": "parlamento-del-uruguay-asistencias-a-la-camara-de-representantes",
     "proyectos": "parlamento-del-uruguay-proyectos-entrados-al-parlamento",
     "leyes": "parlamento-del-uruguay-leyes-promulgadas-del-poder-ejecutivo",
+    "pedidos-informes": "crr-pedidos-de-informes",
+    "nomina": "crr-nominarepresentanteslegactual2",
 }
+# Los datasets que son un solo archivo, sin una legislatura por recurso.
+_ARCHIVO_UNICO = ("leyes", "pedidos-informes", "nomina")
+
+_COLUMNAS_PEDIDOS = ["Organismo", "Fecha", "Autores", "Tema", "Estado", "URLoficio", "URLcontestacion"]
+_COLUMNAS_NOMINA = ["Nombre", "Genero", "Edad", "PartidoPolitico", "Departamento", "HojaVotacion"]
+ESTADOS_PEDIDO = ("CONTESTADO", "VENCIDO", "SIN CONTESTAR", "NO ENTREGADO")
+PLAZO_DIAS = 45  # Ley 17.673, artículo 1
 
 _COLUMNAS_ASISTENCIA = {
     "nombre": "nombre",
@@ -264,6 +310,164 @@ def leer_leyes(ruta: Path) -> dict:
 # --- Descarga ----------------------------------------------------------------------------------------
 
 
+# --- Pedidos de informes y nómina ---------------------------------------------------------------
+
+
+def leer_nomina(ruta: Path) -> list[dict]:
+    """La nómina de Diputados (titulares y suplentes con actuación). No sale a la red.
+
+    Cada fila: `nombre` (tal cual), `partido`, `departamento` y `hoja` (la hoja de votación, entero).
+    **La edad y el género no se leen** (trampa 16).
+    """
+    encabezado, datos = _leer_csv(ruta)
+    if [c.strip() for c in encabezado] != _COLUMNAS_NOMINA:
+        raise ParlamentoInvalido(f"{Path(ruta).name}: columnas {encabezado}, se esperaban {_COLUMNAS_NOMINA}")
+    filas = []
+    for n, f in enumerate(datos, start=2):
+        nombre = f[0].strip()
+        if "," not in nombre:
+            raise ParlamentoInvalido(f"{Path(ruta).name} fila {n}: {nombre!r} no es «APELLIDOS, NOMBRES»")
+        hoja = f[5].strip()
+        try:
+            hoja_n = int(float(hoja)) if hoja else None
+        except ValueError:
+            raise ParlamentoInvalido(f"{Path(ruta).name} fila {n}: hoja de votación {hoja!r}") from None
+        filas.append({"nombre": nombre, "partido": f[3].strip(), "departamento": f[4].strip(), "hoja": hoja_n})
+    return filas
+
+
+def _palabras(texto: str) -> set[str]:
+    return set(_sin_tildes(texto).replace(",", " ").replace(".", " ").split())
+
+
+def identificar(autor: str, nomina: list[dict]) -> Optional[dict]:
+    """La persona de la nómina que corresponde a `autor`, o `None` si no hay una sola.
+
+    Exige que **todas** las palabras del autor estén en el nombre de la nómina, sin tildes. Dos
+    candidatos o ninguno dan `None`: un nombre ambiguo no se asigna.
+    """
+    buscadas = _palabras(autor)
+    if not buscadas:
+        return None
+    candidatos = [p for p in nomina if buscadas <= _palabras(p["nombre"])]
+    return candidatos[0] if len(candidatos) == 1 else None
+
+
+def leer_pedidos(ruta: Path) -> list[dict]:
+    """Los pedidos de informes de Diputados, uno por fila. No sale a la red.
+
+    Cada pedido: `organismo`, `fecha` (date), `autores` (lista, separada por `+`), `tema`, `estado`
+    (uno de `ESTADOS_PEDIDO`), `url_oficio` y `url_contestacion` (`None` si no hay). Rechaza otras
+    columnas, una fecha que no sea `AAAA/MM/DD`, un estado que no se midió y un pedido sin autor u
+    oficio.
+    """
+    encabezado, datos = _leer_csv(ruta)
+    if [c.strip() for c in encabezado] != _COLUMNAS_PEDIDOS:
+        raise ParlamentoInvalido(f"{Path(ruta).name}: columnas {encabezado}, se esperaban {_COLUMNAS_PEDIDOS}")
+    pedidos = []
+    for n, f in enumerate(datos, start=2):
+        donde = f"{Path(ruta).name} fila {n}"
+        organismo, fecha, autores, tema, estado, oficio, contestacion = (c.strip() for c in f)
+        m = re.fullmatch(r"(\d{4})/(\d{2})/(\d{2})", fecha)
+        if not m:
+            raise ParlamentoInvalido(f"{donde}: fecha {fecha!r} no es AAAA/MM/DD")
+        if estado not in ESTADOS_PEDIDO:
+            raise ParlamentoInvalido(f"{donde}: estado {estado!r}; los medidos son {ESTADOS_PEDIDO}")
+        lista = [a.strip() for a in autores.split("+") if a.strip()]
+        if not lista or not oficio:
+            raise ParlamentoInvalido(f"{donde}: un pedido sin autor o sin oficio")
+        pedidos.append(
+            {
+                "organismo": organismo,
+                "fecha": date(int(m.group(1)), int(m.group(2)), int(m.group(3))),
+                "autores": lista,
+                "tema": tema,
+                "estado": estado,
+                "url_oficio": oficio,
+                "url_contestacion": contestacion or None,
+            }
+        )
+    return pedidos
+
+
+def _tasa(parte: int, total: int) -> Optional[float]:
+    return round(100 * parte / total, 1) if total else None
+
+
+def resumen_pedidos(
+    pedidos: list[dict],
+    hoy: date,
+    nomina: Optional[list[dict]] = None,
+    organismo: str = "",
+    presentados_hasta: Optional[date] = None,
+) -> dict:
+    """Cuántos pedidos se contestaron, por organismo, sobre los que ya cumplieron el plazo.
+
+    `pct_contestado_con_plazo_cumplido` se calcula sólo sobre los pedidos con más de `PLAZO_DIAS` días
+    a `hoy` (trampa 10): un pedido de la semana pasada sin contestar no es un pedido incumplido. Con
+    `nomina`, cuenta los pedidos por partido de sus autores (un pedido con autores de dos partidos
+    cuenta en los dos) y los autores que no se pudieron identificar. Con `presentados_hasta`, sólo
+    los pedidos presentados hasta esa fecha: para comparar organismos sobre una misma cohorte
+    (trampa 10b). `por_semestre` muestra cómo cae la tasa en los pedidos más nuevos.
+    """
+    if organismo:
+        clave = _sin_tildes(organismo)
+        pedidos = [p for p in pedidos if clave in _sin_tildes(p["organismo"])]
+        if not pedidos:
+            raise ParlamentoInvalido(f"ningún pedido a un organismo que contenga {organismo!r}")
+    if presentados_hasta is not None:
+        pedidos = [p for p in pedidos if p["fecha"] <= presentados_hasta]
+        if not pedidos:
+            raise ParlamentoInvalido(f"ningún pedido presentado hasta {presentados_hasta}")
+
+    def contar(grupo: list[dict]) -> dict:
+        maduros = [p for p in grupo if (hoy - p["fecha"]).days > PLAZO_DIAS]
+        estados = Counter(p["estado"] for p in grupo)
+        return {
+            "pedidos": len(grupo),
+            **{e.lower().replace(" ", "_"): estados.get(e, 0) for e in ESTADOS_PEDIDO},
+            "con_plazo_cumplido": len(maduros),
+            "pct_contestado_con_plazo_cumplido": _tasa(sum(p["estado"] == "CONTESTADO" for p in maduros), len(maduros)),
+        }
+
+    por_organismo: dict[str, list[dict]] = {}
+    for p in pedidos:
+        por_organismo.setdefault(p["organismo"], []).append(p)
+    repetidos = Counter((p["organismo"], p["fecha"], tuple(p["autores"]), p["tema"]) for p in pedidos)
+    por_semestre: dict[str, list[dict]] = {}
+    for p in pedidos:
+        por_semestre.setdefault(f"{p['fecha'].year}-S{1 + (p['fecha'].month > 6)}", []).append(p)
+    salida = {
+        "desde": min(p["fecha"] for p in pedidos).isoformat(),
+        "hasta": max(p["fecha"] for p in pedidos).isoformat(),
+        "plazo_dias": PLAZO_DIAS,
+        "total": contar(pedidos),
+        "por_organismo": sorted(
+            ({"organismo": o, **contar(g)} for o, g in por_organismo.items()), key=lambda x: -x["pedidos"]
+        ),
+        "por_semestre": [{"semestre": s, **contar(g)} for s, g in sorted(por_semestre.items())],
+        "contestados_sin_enlace": sum(p["estado"] == "CONTESTADO" and not p["url_contestacion"] for p in pedidos),
+        "con_varios_autores": sum(len(p["autores"]) > 1 for p in pedidos),
+        "repetidos": sum(v - 1 for v in repetidos.values() if v > 1),
+    }
+    if nomina is not None:
+        partidos: Counter = Counter()
+        sin_identificar: Counter = Counter()
+        for p in pedidos:
+            vistos = set()
+            for a in p["autores"]:
+                persona = identificar(a, nomina)
+                if persona is None:
+                    sin_identificar[a] += 1
+                else:
+                    vistos.add(persona["partido"])
+            for partido in vistos:
+                partidos[partido] += 1
+        salida["pedidos_por_partido"] = dict(partidos.most_common())
+        salida["autores_sin_identificar"] = dict(sin_identificar.most_common())
+    return salida
+
+
 def recursos_por_legislatura(clave: str) -> dict[int, str]:
     """{legislatura: url} de un dataset por legislatura. **Sale a la red.**"""
     if clave not in DATASETS or clave == "leyes":
@@ -280,14 +484,12 @@ def recursos_por_legislatura(clave: str) -> dict[int, str]:
 
 
 def descargar(clave: str, destino: Path, legislatura: Optional[int] = None) -> Path:
-    """Baja un archivo: `leyes`, o `asistencias-senado`, `asistencias-diputados` o `proyectos` de una
-    legislatura. **Sale a la red.**"""
-    if clave == "leyes":
-        csvs = [
-            r for r in catalogo.recursos(DATASETS["leyes"]) if r["formato"] == "CSV" and "etadato" not in r["nombre"]
-        ]
+    """Baja un archivo: `leyes`, `pedidos-informes` o `nomina`, o `asistencias-senado`,
+    `asistencias-diputados` o `proyectos` de una legislatura. **Sale a la red.**"""
+    if clave in _ARCHIVO_UNICO:
+        csvs = [r for r in catalogo.recursos(DATASETS[clave]) if r["formato"] == "CSV" and "etadato" not in r["nombre"]]
         if len(csvs) != 1:
-            raise ParlamentoInvalido(f"{DATASETS['leyes']}: {len(csvs)} CSV de leyes, se esperaba 1")
+            raise ParlamentoInvalido(f"{DATASETS[clave]}: {len(csvs)} CSV, se esperaba 1")
         return red.bajar(csvs[0]["url"], Path(destino))
     urls = recursos_por_legislatura(clave)
     if legislatura not in urls:
@@ -300,15 +502,28 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     sub = ap.add_subparsers(dest="orden", required=True)
     b = sub.add_parser("bajar")
     b.add_argument("clave", choices=sorted(DATASETS))
-    b.add_argument("legislatura", type=int, nargs="?")
-    b.add_argument("destino", type=Path)
+    b.add_argument("legislatura_o_destino", nargs="+", help="[legislatura] destino")
     a = sub.add_parser("asistencias")
     a.add_argument("archivo", type=Path)
     a.add_argument("--minimo", type=int, default=10)
     a.add_argument("--nombre", default="")
+    pe = sub.add_parser("pedidos")
+    pe.add_argument("archivo", type=Path)
+    pe.add_argument("--nomina", type=Path)
     args = ap.parse_args(argv)
+    if args.orden == "pedidos":
+        nomina = leer_nomina(args.nomina) if args.nomina else None
+        r = resumen_pedidos(leer_pedidos(args.archivo), date.today(), nomina)
+        t_ = r["total"]
+        print(f"{t_['pedidos']} pedidos del {r['desde']} al {r['hasta']}")
+        print(f"con el plazo de {r['plazo_dias']} días cumplido: {t_['con_plazo_cumplido']}")
+        print(f"contestados, de los que ya cumplieron el plazo: {t_['pct_contestado_con_plazo_cumplido']}%")
+        for o in r["por_organismo"]:
+            print(f"  {o['organismo'][:45]:45} {o['pedidos']:>5} {o['pct_contestado_con_plazo_cumplido']}%")
+        return 0
     if args.orden == "bajar":
-        print(f"bajado {descargar(args.clave, args.destino, args.legislatura)}")
+        *leg, destino = args.legislatura_o_destino
+        print(f"bajado {descargar(args.clave, Path(destino), int(leg[0]) if leg else None)}")
         return 0
     r = resumen_asistencias(leer_asistencias(args.archivo), args.minimo, args.nombre)
     print(f"{r['personas']} filas, {r['con_el_minimo']} con al menos {args.minimo} citaciones")

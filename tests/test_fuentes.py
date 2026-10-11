@@ -309,3 +309,15 @@ def test_ursea_ppi_y_ancap_ex_planta(tmp_path):
     assert not [c for c in ex["conflictos"] if c["producto"] in ursea.COMPARABLES]
     assert len(ursea.comparar(ppi, ex, "Gasolina Super 95")) >= 55
     assert len(ursea.leer_componentes(archivos["componentes"])) >= 355
+
+
+def test_parlamento_pedidos_de_informes_y_nomina(tmp_path):
+    """Medido el 11/10/26: 2.532 pedidos de la legislatura 50 y 131 de 133 autores identificados en la
+    nómina. Si aparece un estado nuevo, `leer_pedidos` lo rechaza y este test lo dice."""
+    from datetime import date
+
+    pedidos = parlamento.leer_pedidos(parlamento.descargar("pedidos-informes", tmp_path / "p.csv"))
+    nomina = parlamento.leer_nomina(parlamento.descargar("nomina", tmp_path / "n.csv"))
+    assert len(pedidos) > 2000 and len(nomina) > 300
+    r = parlamento.resumen_pedidos(pedidos, date.today(), nomina)
+    assert sum(r["autores_sin_identificar"].values()) < 0.02 * sum(len(p["autores"]) for p in pedidos)

@@ -5,10 +5,12 @@ Cada clase fija algo medido el 10/10/2026 (ver `docs/2026-10-10-datos-civicos.md
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import pytest
 
+from uydatos import parlamento
 from uydatos.parlamento import (
     ParlamentoInvalido,
     leer_asistencias,
@@ -178,3 +180,80 @@ class TestTitulos:
         assert legislatura_del_titulo("Asistencias a Sesiones de Cámara  - Legislatura 50") == 50
         assert legislatura_del_titulo("Proyectos al Parlamento - Legislatura 42") == 42
         assert legislatura_del_titulo("Metadatos") is None
+
+
+# --- Pedidos de informes y nómina -------------------------------------------------------------
+
+PEDIDOS = (
+    "Organismo,Fecha,Autores,Tema,Estado,URLoficio,URLcontestacion\n"
+    "MINISTERIO DE SALUD PÚBLICA,2025/03/01,Gustavo Salle Lorier,TEMA A,CONTESTADO,https://x/o1.pdf,https://x/c1.pdf\n"
+    "MINISTERIO DE SALUD PÚBLICA,2025/03/01,Gustavo Salle Lorier,TEMA A,CONTESTADO,https://x/o2.pdf,\n"
+    "MINISTERIO DE TRANSPORTE Y OBRAS PÚBLICAS,2025/04/10,José Luis Satdjian +  Amin Niffouri,TEMA B,VENCIDO,https://x/o3.pdf,\n"
+    "MINISTERIO DE TRANSPORTE Y OBRAS PÚBLICAS,2026/09/20,Persona Desconocida,TEMA C,SIN CONTESTAR,https://x/o4.pdf,\n"
+)
+NOMINA = (
+    "Nombre,Genero,Edad,PartidoPolitico,Departamento,HojaVotacion\n"
+    '"SALLE LORIER, GUSTAVO ",Varón,70,Identidad Soberana,Montevideo,1.0\n'
+    '"SATDJIAN ALVAREZ, JOSÉ LUIS",Varón,45,Nacional,Montevideo,71.0\n'
+    '"NIFFOURI BLANCO, AMIN",Varón,50,Nacional,Canelones,404.0\n'
+)
+
+
+@pytest.fixture
+def pedidos_y_nomina(tmp_path):
+    (tmp_path / "p.csv").write_text(PEDIDOS, encoding="utf-8")
+    (tmp_path / "n.csv").write_text(NOMINA, encoding="utf-8")
+    return parlamento.leer_pedidos(tmp_path / "p.csv"), parlamento.leer_nomina(tmp_path / "n.csv")
+
+
+class TestPedidos:
+    def test_lee_coautores_separados_por_mas(self, pedidos_y_nomina):
+        pedidos, _ = pedidos_y_nomina
+        assert pedidos[2]["autores"] == ["José Luis Satdjian", "Amin Niffouri"]
+        assert pedidos[1]["url_contestacion"] is None and pedidos[0]["fecha"].isoformat() == "2025-03-01"
+
+    def test_la_nomina_no_lee_la_edad(self, pedidos_y_nomina):
+        _, nomina = pedidos_y_nomina
+        assert nomina[0] == {
+            "nombre": "SALLE LORIER, GUSTAVO",
+            "partido": "Identidad Soberana",
+            "departamento": "Montevideo",
+            "hoja": 1,
+        }
+
+    def test_identificar_exige_un_unico_candidato(self, pedidos_y_nomina):
+        _, nomina = pedidos_y_nomina
+        assert parlamento.identificar("José Luis Satdjian", nomina)["partido"] == "Nacional"
+        assert parlamento.identificar("Persona Desconocida", nomina) is None
+        doble = nomina + [{"nombre": "SALLE PEREZ, GUSTAVO", "partido": "X", "departamento": "", "hoja": None}]
+        assert parlamento.identificar("Gustavo Salle", doble) is None
+
+    def test_la_tasa_es_sobre_los_que_cumplieron_el_plazo(self, pedidos_y_nomina):
+        pedidos, nomina = pedidos_y_nomina
+        r = parlamento.resumen_pedidos(pedidos, date(2026, 10, 11), nomina)
+        # el de 2026/09/20 tiene 21 días: no entra en la tasa
+        assert r["total"]["con_plazo_cumplido"] == 3 and r["total"]["pct_contestado_con_plazo_cumplido"] == 66.7
+        mtop = next(o for o in r["por_organismo"] if "TRANSPORTE" in o["organismo"])
+        assert mtop["pedidos"] == 2 and mtop["pct_contestado_con_plazo_cumplido"] == 0.0
+        assert r["contestados_sin_enlace"] == 1 and r["con_varios_autores"] == 1 and r["repetidos"] == 1
+
+    def test_un_pedido_con_dos_autores_del_mismo_partido_cuenta_una_vez(self, pedidos_y_nomina):
+        pedidos, nomina = pedidos_y_nomina
+        r = parlamento.resumen_pedidos(pedidos, date(2026, 10, 11), nomina)
+        assert r["pedidos_por_partido"] == {"Identidad Soberana": 2, "Nacional": 1}
+        assert r["autores_sin_identificar"] == {"Persona Desconocida": 1}
+
+    def test_cohorte_y_semestres(self, pedidos_y_nomina):
+        pedidos, _ = pedidos_y_nomina
+        r = parlamento.resumen_pedidos(pedidos, date(2026, 10, 11), presentados_hasta=date(2025, 12, 31))
+        assert r["total"]["pedidos"] == 3 and [s["semestre"] for s in r["por_semestre"]] == ["2025-S1"]
+
+    def test_un_estado_que_no_se_midio_se_rechaza(self, tmp_path):
+        (tmp_path / "p.csv").write_text(PEDIDOS.replace("VENCIDO", "ARCHIVADO"), encoding="utf-8")
+        with pytest.raises(parlamento.ParlamentoInvalido, match="ARCHIVADO"):
+            parlamento.leer_pedidos(tmp_path / "p.csv")
+
+    def test_una_fecha_en_otro_formato_se_rechaza(self, tmp_path):
+        (tmp_path / "p.csv").write_text(PEDIDOS.replace("2025/04/10", "10/04/2025"), encoding="utf-8")
+        with pytest.raises(parlamento.ParlamentoInvalido, match="AAAA/MM/DD"):
+            parlamento.leer_pedidos(tmp_path / "p.csv")
