@@ -22,12 +22,13 @@ Módulos:
 - `rut`          — dígito verificador de RUT y cédula uruguaya.
 - `semanas`      — semanas ISO 8601 (W1, W2...) con los bordes de año resueltos.
 - `catalogo`     — recursos del catálogo de datos abiertos de Uruguay (CKAN).
+- `ursea`        — precio de paridad de importación de los combustibles, y su comparación con ANCAP.
 - `parlamento`   — asistencias de las dos cámaras, proyectos desde 1985 y leyes promulgadas.
 - `mides`        — la familia de indicadores de MIDES, todos con la misma forma (copia de 2019).
 - `observatorio` — los indicadores del Observatorio Social del MIDES, de su página viva en gub.uy.
 - `hojas`        — hojas de cálculo XLSX y XLS, con el motor elegido por la firma del archivo.
 """
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"

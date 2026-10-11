@@ -31,6 +31,7 @@ from uydatos import (
     parlamento,
     red,
     salto_grande,
+    ursea,
 )
 from uydatos.catalogo import recursos
 
@@ -295,3 +296,16 @@ def test_observatorio_el_sitemap_y_una_pagina_viva():
     r = observatorio.leer("tasa-actividad-segun-sexo-total-pais")
     assert r["dimensiones"] == ["Sexo"] and r["unidad"]
     assert max(int(p) for p in r["periodos"]) >= 2024
+
+
+def test_ursea_ppi_y_ancap_ex_planta(tmp_path):
+    """Medido el 11/10/26: 57 ventanas de PPI (una imposible, descartada), y la comparación de la
+    Súper 95 cubre 55 meses desde 2022-01. Si aparece un conflicto en las gasolinas o los gasoils, o
+    se corrige la ventana imposible, este test lo dice."""
+    archivos = ursea.descargar(tmp_path)
+    ppi = ursea.leer_ppi(archivos["ppi"])
+    ex = ursea.leer_ex_planta(archivos["ex_planta"])
+    assert len(ppi["descartadas"]) == 1
+    assert not [c for c in ex["conflictos"] if c["producto"] in ursea.COMPARABLES]
+    assert len(ursea.comparar(ppi, ex, "Gasolina Super 95")) >= 55
+    assert len(ursea.leer_componentes(archivos["componentes"])) >= 355

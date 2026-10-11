@@ -1,5 +1,21 @@
 # Cambios
 
+## 0.11.0 — 2026-10-11
+
+- **Nuevo: `uydatos.ursea`**, el precio de paridad de importación (PPI) de los combustibles que
+  calcula URSEA, su desglose desde el FOB en USD/m³, y el precio ex planta de ANCAP, con
+  `comparar()`: **¿ANCAP vende por encima o por debajo de lo que costaría importar?** Se compara sin
+  impuestos contra sin impuestos (el ex planta de ANCAP ya los descuenta) y con la mezcla de
+  agrocombustibles; el PPI de la ventana que cierra el 25 rige el mes siguiente. Trampas medidas: el
+  recurso «PPI al consumidor final 2002-2020» es idéntico byte a byte al de componentes (la serie
+  histórica se perdió del catálogo); tres modelos de PPI que no se empalman; una ventana que termina
+  antes de empezar (se descarta, no se corrige); la vigencia publicada repite el mes en 2 de 355
+  filas; `FuelP_ExP` es con impuestos aunque su nombre diga lo contrario; el GLP viene en $/l en un
+  archivo y en $/kg en el otro; el ex planta de ANCAP es un registro acumulado de 19.105 filas para
+  1.204 pares, con tres formatos de fecha (`202,608` incluido) y 93 pares contradictorios, todos de
+  gases. Medido: de 2022 a 2026 la Súper 95 y el Gasoil 50-S quedan en promedio a −1,4% y −0,8% de
+  la paridad, con abril de 2026 en −10% y −31%.
+
 ## 0.10.0 — 2026-10-11
 
 - **Nuevo: `uydatos.observatorio`**, los indicadores sociales del MIDES leídos de su página viva en

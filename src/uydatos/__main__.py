@@ -31,6 +31,7 @@ from uydatos import (
     parlamento,
     red,
     salto_grande,
+    ursea,
 )
 
 LECTORES = {
@@ -50,6 +51,7 @@ LECTORES = {
     "mides": mides,
     "observatorio": observatorio,
     "parlamento": parlamento,
+    "ursea": ursea,
     "red": red,
     "salto_grande": salto_grande,
 }
