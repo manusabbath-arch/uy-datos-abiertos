@@ -22,8 +22,10 @@ Las trampas, medidas el 10/10/2026 sobre 2024 y 2025
 5. **El archivo de adjudicaciones trae también llamados (1.005 en 2025) y anulaciones (3.146).**
    No son compras. Las anulaciones **no** apuntan a una adjudicación publicada (ninguna comparte
    `ocid` con una, ni en 2024 ni en 2025): son procedimientos que terminaron sin adjudicar.
-6. **Las adjudicaciones tienen estado**: solo las `active` son gasto. En 2025 hay además 360
-   `cancelled`, 110 `unsuccessful` y 8 `pending`.
+6. **Las adjudicaciones tienen estado**: solo las `active` son gasto. En 2025 hay además 3
+   `cancelled`, 5 `unsuccessful` y 8 `pending` (de 140.144 adjudicaciones, 140.128 activas; medido el
+   14/10/2026 sobre el archivo bajado el 11/10). La primera versión de esta nota decía 360 y 110 para
+   las dos primeras y no se pudo reproducir: la cifra que vale es la medida sobre el archivo.
 7. **Las monedas están mezcladas**: pesos, dólares, euros, Unidades Indexadas (`UYI`), reales,
    francos suizos, rands, y 11.221 ítems de 2025 sin moneda. Cada moneda se suma aparte;
    `convertir()` las lleva a pesos con una cotización que le da quien llama.

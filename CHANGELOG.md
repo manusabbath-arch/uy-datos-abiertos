@@ -1,5 +1,11 @@
 # Cambios
 
+## Sin publicar
+
+- **Docstring de `compras`**: los estados de 2025 son 3 `cancelled`, 5 `unsuccessful` y 8 `pending` (medido sobre el
+  archivo de 2025), no 360 y 110. Sin cambio de comportamiento. El test de red de INUMET afirma un piso (el dataset crece
+  todos los días) en vez de un conteo exacto.
+
 ## 0.12.1 — 2026-10-14
 
 - **Arreglo: `ancap.descargar()` y `ancap_ventas.descargar()` ya no fallan con 404 cuando ANCAP

@@ -118,9 +118,11 @@ def test_buscar_por_organizacion_mides():
 
 @pytest.mark.red
 def test_el_datastore_de_inumet_se_puede_consultar_sin_bajar_el_archivo():
-    """Medido el 2026-10-09: `total` 332.071 e incluye la fila del encabezado."""
+    """Medido el 2026-10-09: `total` 332.071 e incluye la fila del encabezado; el 2026-10-14 eran 392.699.
+    Se afirma un piso y no el numero exacto: INUMET agrega observaciones todos los dias, y un test semanal
+    que falla porque el dataset crecio enseña a ignorarlo."""
     r = catalogo.datastore_search("f800fc53-556b-4d1c-8bd6-28b41f9cf146", limite=2)
-    assert r["total"] == 332071
+    assert r["total"] >= 332071
     assert "temp_aire" in r["campos"]
 
 
