@@ -35,10 +35,14 @@ from typing import Optional, Sequence
 from uydatos import red
 
 DATASET = "ancap-precio-combustible-pe"
+# La URL de respaldo, por si el catálogo no responde. **El id del recurso cambia cada vez que ANCAP
+# republica el dataset** (el 12/10/26 pasó de 1a37fc4a a c486544e y la URL vieja dio 404), así que
+# `descargar()` no la usa de entrada: pregunta al catálogo cuál es el CSV vigente.
 URL_CSV = (
     "https://catalogodatos.gub.uy/dataset/556beb30-02fc-4d06-909a-f42083c89ef7/resource/"
-    "1a37fc4a-44fd-4842-bcb4-b5845dc8eced/download/datos-de-precios-de-combustibles.csv"
+    "c486544e-0fca-4f6f-8403-3ee379a868f4/download/datos-de-precios-de-combustibles.csv"
 )
+NOMBRE_CSV = "datos-de-precios-de-combustibles.csv"
 
 COLUMNAS_ESPERADAS = ["Año", "Mes", "Producto", "Unidad", "Valor"]
 SIN_COTIZACION = "S/C"
@@ -154,12 +158,32 @@ def precio_del_mes(serie: list[dict], producto: str, anio: int, mes: int) -> Opt
     return None
 
 
-def descargar(destino: Path, url: str = URL_CSV) -> Path:
-    """Baja el CSV del catálogo a `destino`. **Única función que sale a la red.**
+def url_vigente() -> str:
+    """La URL del CSV de datos que el catálogo publica hoy. **Sale a la red.**
 
-    Si la URL del recurso cambia, `uydatos.catalogo.recursos(DATASET)` da la vigente.
+    Se elige por el nombre del archivo: el dataset publica el mismo contenido en CSV, JSON y XML, y
+    un segundo CSV (o ninguno) es un cambio que hay que ver, no adivinar. Si el catálogo no responde
+    se usa `URL_CSV`, la última conocida.
     """
-    return red.bajar(url, destino)
+    from uydatos.catalogo import recursos
+
+    try:
+        todos = recursos(DATASET)
+    except OSError:
+        return URL_CSV
+    candidatos = [r["url"] for r in todos if r["url"].split("?")[0].rsplit("/", 1)[-1] == NOMBRE_CSV]
+    if len(candidatos) != 1:
+        raise AncapInvalido(f"{DATASET}: {len(candidatos)} recursos llamados {NOMBRE_CSV}, se esperaba 1")
+    return candidatos[0]
+
+
+def descargar(destino: Path, url: Optional[str] = None) -> Path:
+    """Baja el CSV del catálogo a `destino`. **Sale a la red.**
+
+    Sin `url`, la vigente según el catálogo (`url_vigente()`): el id del recurso cambia cuando ANCAP
+    republica, y una URL fija se rompe en silencio hasta que alguien la corre.
+    """
+    return red.bajar(url or url_vigente(), destino)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

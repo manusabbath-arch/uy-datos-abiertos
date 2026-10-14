@@ -228,3 +228,45 @@ class TestRechazos:
         f = tmp_path / "v.csv"
         _escribir(f, [_fila(cantidad="1"), "", "   ", _fila(cantidad="2")])
         assert len(leer(f)) == 2
+
+
+class TestUrlVigente:
+    """El 12/10/26 ANCAP republicó el dataset y el id del recurso cambió: la URL fija dio 404."""
+
+    NOMBRE = "datos-de-cantidad-de-ventas-de-combustibles.csv"
+
+    def test_elige_el_csv_de_datos_por_nombre(self, monkeypatch):
+        from uydatos import ancap_ventas, catalogo
+
+        vigente = f"https://x/resource/NUEVO/download/{self.NOMBRE}"
+        monkeypatch.setattr(
+            catalogo,
+            "recursos",
+            lambda d: [
+                {"url": "https://x/resource/a/download/metadatos-cantidad-de-ventas-de-combustibles.json"},
+                {"url": vigente},
+                {"url": f"https://x/resource/b/download/{self.NOMBRE[:-3]}xml"},
+            ],
+        )
+        assert ancap_ventas.url_vigente() == vigente
+
+    def test_sin_catalogo_cae_a_la_ultima_conocida(self, monkeypatch):
+        from uydatos import ancap_ventas, catalogo
+
+        def caido(_):
+            raise OSError("sin red")
+
+        monkeypatch.setattr(catalogo, "recursos", caido)
+        assert ancap_ventas.url_vigente() == ancap_ventas.URL_CSV
+
+    def test_dos_csv_se_rechaza(self, monkeypatch):
+        import pytest
+
+        from uydatos import ancap_ventas, catalogo
+        from uydatos.ancap_ventas import AncapVentasInvalido
+
+        monkeypatch.setattr(
+            catalogo, "recursos", lambda d: [{"url": f"https://x/{i}/download/{self.NOMBRE}"} for i in range(2)]
+        )
+        with pytest.raises(AncapVentasInvalido, match="2 recursos"):
+            ancap_ventas.url_vigente()

@@ -153,3 +153,64 @@ class TestRechazos:
         _escribir(f, ["2026;7;GASOIL 50-S *;abc;$/lt"])
         with pytest.raises(AncapInvalido, match="precio"):
             leer_publicaciones(f)
+
+
+class TestUrlVigente:
+    """El 12/10/26 ANCAP republicó el dataset y el id del recurso cambió: la URL fija dio 404 en la
+    corrida semanal. `descargar()` tiene que preguntar al catálogo, no recordar un id."""
+
+    @staticmethod
+    def _recursos(*urls):
+        return [{"formato": "CSV", "url": u} for u in urls]
+
+    def test_elige_el_csv_de_datos_por_nombre(self, monkeypatch):
+        from uydatos import ancap, catalogo
+
+        vigente = "https://x/resource/NUEVO/download/datos-de-precios-de-combustibles.csv"
+        monkeypatch.setattr(
+            catalogo,
+            "recursos",
+            lambda d: self._recursos(
+                "https://x/resource/a/download/metadatos-de-precios-de-combustibles.json",
+                vigente,
+                "https://x/resource/b/download/datos-de-precios-de-combustibles.xml",
+            ),
+        )
+        assert ancap.url_vigente() == vigente
+
+    def test_descargar_usa_la_url_vigente(self, monkeypatch, tmp_path):
+        from uydatos import ancap, catalogo, red
+
+        vigente = "https://x/resource/NUEVO/download/datos-de-precios-de-combustibles.csv"
+        monkeypatch.setattr(catalogo, "recursos", lambda d: self._recursos(vigente))
+        pedidas = []
+        monkeypatch.setattr(red, "bajar", lambda url, destino: pedidas.append(url) or destino)
+        ancap.descargar(tmp_path / "a.csv")
+        assert pedidas == [vigente]
+
+    def test_una_url_explicita_no_pregunta_al_catalogo(self, monkeypatch, tmp_path):
+        from uydatos import ancap, catalogo, red
+
+        monkeypatch.setattr(catalogo, "recursos", lambda d: pytest.fail("no debia consultar el catalogo"))
+        pedidas = []
+        monkeypatch.setattr(red, "bajar", lambda url, destino: pedidas.append(url) or destino)
+        ancap.descargar(tmp_path / "a.csv", url="https://x/y.csv")
+        assert pedidas == ["https://x/y.csv"]
+
+    def test_sin_catalogo_cae_a_la_ultima_conocida(self, monkeypatch):
+        from uydatos import ancap, catalogo
+
+        def caido(_):
+            raise OSError("sin red")
+
+        monkeypatch.setattr(catalogo, "recursos", caido)
+        assert ancap.url_vigente() == ancap.URL_CSV
+
+    @pytest.mark.parametrize("cuantos", [0, 2])
+    def test_cero_o_dos_csv_se_rechaza(self, monkeypatch, cuantos):
+        from uydatos import ancap, catalogo
+
+        u = "https://x/resource/{}/download/datos-de-precios-de-combustibles.csv"
+        monkeypatch.setattr(catalogo, "recursos", lambda d: self._recursos(*[u.format(i) for i in range(cuantos)]))
+        with pytest.raises(AncapInvalido, match=f"{cuantos} recursos"):
+            ancap.url_vigente()

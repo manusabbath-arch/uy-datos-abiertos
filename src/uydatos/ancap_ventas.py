@@ -43,10 +43,13 @@ from uydatos import red
 from uydatos.ancap import numero_europeo
 
 DATASET = "ancap-cantidad-ventas-combustibles"
+# URL de respaldo, por si el catálogo no responde. **El id del recurso cambia cuando ANCAP republica**
+# (el 12/10/26 pasó de 019414ce a e3699b01 y la URL vieja dio 404): `descargar()` pregunta al catálogo.
 URL_CSV = (
     "https://catalogodatos.gub.uy/dataset/94f39174-333a-46bc-a675-78f20a5a6407/resource/"
-    "019414ce-c331-4e29-8361-c43bf6ba445a/download/datos-de-cantidad-de-ventas-de-combustibles.csv"
+    "e3699b01-8649-4d10-a47e-2f951f5c2c8f/download/datos-de-cantidad-de-ventas-de-combustibles.csv"
 )
+NOMBRE_CSV = "datos-de-cantidad-de-ventas-de-combustibles.csv"
 
 COLUMNAS_ESPERADAS = [
     "Mercado",
@@ -200,12 +203,30 @@ def resumen(registros: list[dict]) -> dict:
     }
 
 
-def descargar(destino: Path, url: str = URL_CSV) -> Path:
-    """Baja el CSV del catálogo a `destino`. **Única función que sale a la red.**
+def url_vigente() -> str:
+    """La URL del CSV de datos que el catálogo publica hoy. **Sale a la red.**
 
-    Si la URL del recurso cambia, `uydatos.catalogo.recursos(DATASET)` da la vigente.
+    Se elige por el nombre del archivo: el dataset publica lo mismo en CSV, JSON y XML. Cero o dos
+    CSV es un cambio que hay que ver, no adivinar. Si el catálogo no responde se usa `URL_CSV`.
     """
-    return red.bajar(url, destino)
+    from uydatos.catalogo import recursos
+
+    try:
+        todos = recursos(DATASET)
+    except OSError:
+        return URL_CSV
+    candidatos = [r["url"] for r in todos if r["url"].split("?")[0].rsplit("/", 1)[-1] == NOMBRE_CSV]
+    if len(candidatos) != 1:
+        raise AncapVentasInvalido(f"{DATASET}: {len(candidatos)} recursos llamados {NOMBRE_CSV}, se esperaba 1")
+    return candidatos[0]
+
+
+def descargar(destino: Path, url: Optional[str] = None) -> Path:
+    """Baja el CSV del catálogo a `destino`. **Sale a la red.**
+
+    Sin `url`, la vigente según el catálogo: el id del recurso cambia cuando ANCAP republica.
+    """
+    return red.bajar(url or url_vigente(), destino)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

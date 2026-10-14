@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- **Arreglo: `ancap.descargar()` y `ancap_ventas.descargar()` ya no fallan con 404 cuando ANCAP
+  republica.** El 12/10/26 ANCAP republicó sus dos datasets y el id de cada recurso cambió
+  (`1a37fc4a` a `c486544e` en precios, `019414ce` a `e3699b01` en ventas): la URL fija dio 404 y la
+  corrida semanal de `mcp-uruguay` falló. Ahora las dos preguntan al catálogo cuál es el CSV vigente
+  (`url_vigente()`, por el nombre del archivo; cero o dos CSV se rechaza) y caen a `URL_CSV`, ya
+  actualizada, solo si el catálogo no responde. Con una `url` explícita no consultan nada.
+  **Quien tenga instalada la 0.12.0 sigue con la URL vieja hasta que actualice.**
+
 ## 0.12.0 — 2026-10-11
 
 - **`uydatos.parlamento` suma los pedidos de informes de Diputados y la nómina**: `leer_pedidos`,
