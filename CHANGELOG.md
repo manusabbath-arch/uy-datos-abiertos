@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 0.12.1 — 2026-10-14
 
 - **Arreglo: `ancap.descargar()` y `ancap_ventas.descargar()` ya no fallan con 404 cuando ANCAP
   republica.** El 12/10/26 ANCAP republicó sus dos datasets y el id de cada recurso cambió
