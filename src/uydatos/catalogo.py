@@ -94,6 +94,82 @@ def _filtro_formato(variantes: list[str]) -> str:
     return "res_format:(" + " OR ".join(f'"{v}"' for v in variantes) + ")"
 
 
+def formatos() -> dict[str, int]:
+    """El histograma de `res_format` de TODO el catálogo. **Sale a la red.**
+
+    El facet viene completo aunque `rows=0`, así que no hay que paginar para contar formatos: una
+    sola petición. Medido el 2026-10-17 sobre 2.777 datasets.
+    """
+    r = accion(
+        "package_search",
+        q="*:*",
+        rows=0,
+        **{"facet.field": '["res_format"]', "facet.limit": "-1"},
+    )
+    return dict((r.get("facets") or {}).get("res_format") or {})
+
+
+def nombres() -> list[str]:
+    """Los nombres de dataset de `package_list`. **Sale a la red.**
+
+    Medido el 2026-10-17: 2.777. El 2026-10-09 eran 2.779: el total **puede bajar**, así que un
+    test que lo afirme como piso también envejece.
+    """
+    r = accion("package_list")
+    if not isinstance(r, list) or not r:
+        raise CatalogoInvalido(f"package_list devolvió {type(r).__name__} vacío, se esperaba una lista de nombres")
+    return r
+
+
+def todos(por_pagina: int = 1000) -> list[str]:
+    """Los nombres de dataset que devuelve `package_search`, paginando. **Sale a la red.**
+
+    Medido el 2026-10-17: 2.716, contra 2.777 de `package_list`. El buscador no ve el catálogo
+    entero; la diferencia se pide con `faltantes()`.
+    """
+    nombres: list[str] = []
+    anterior: Optional[list[str]] = None
+    while True:
+        r = accion("package_search", q="*:*", rows=por_pagina, start=len(nombres))
+        total = r.get("count")
+        if not isinstance(total, int):
+            raise CatalogoInvalido(f"package_search sin un `count` entero: {total!r}")
+        pagina = [d["name"] for d in r.get("results", [])]
+        if not pagina:
+            break
+        if pagina == anterior:
+            raise CatalogoInvalido(
+                f"package_search devolvió la misma página dos veces en start={len(nombres)}: "
+                f"{len(nombres)} nombres de {total}"
+            )
+        anterior = pagina
+        nombres.extend(pagina)
+        if len(nombres) >= total:
+            break
+    return nombres
+
+
+def faltantes() -> dict:
+    """Qué datasets de `package_list` no aparecen en `package_search`. **Sale a la red.**
+
+    Los dos endpoints del mismo catálogo no cuentan lo mismo: medido el 2026-10-17, 2.777 contra
+    2.716. Si la búsqueda devolviera un nombre que la lista no tiene, el catálogo cambió de forma y
+    se rechaza en vez de devolver una diferencia con signo raro.
+    """
+    en_lista = set(nombres())
+    en_busqueda = set(todos())
+    sobra = sorted(en_busqueda - en_lista)
+    if sobra:
+        raise CatalogoInvalido(
+            f"package_search devolvió {len(sobra)} datasets que no están en package_list: {sobra[:3]}"
+        )
+    return {
+        "en_lista": len(en_lista),
+        "en_busqueda": len(en_busqueda),
+        "faltan": sorted(en_lista - en_busqueda),
+    }
+
+
 def buscar(
     texto: str = "",
     *,
@@ -173,8 +249,22 @@ def bajar_recurso(url: str, destino: Path) -> Path:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m uydatos.catalogo", description=__doc__.splitlines()[0])
-    ap.add_argument("dataset")
+    ap.add_argument("dataset", nargs="?", help="el id de un dataset, para ver sus recursos")
+    ap.add_argument("--formatos", action="store_true", help="el histograma de formatos de todo el catálogo")
+    ap.add_argument("--faltantes", action="store_true", help="los datasets que el buscador no ve")
     args = ap.parse_args(argv)
+    if args.formatos:
+        for formato, cuantos in sorted(formatos().items(), key=lambda kv: -kv[1]):
+            print(f"{cuantos:>6}  {formato}")
+        return 0
+    if args.faltantes:
+        r = faltantes()
+        print(f"en_lista {r['en_lista']} · en_busqueda {r['en_busqueda']} · faltan {len(r['faltan'])}")
+        print("\n".join(r["faltan"]))
+        return 0
+    if not args.dataset:
+        ap.print_help()
+        return 2
     for r in recursos(args.dataset):
         print(f"{r['formato']:5} {r['modificado'][:10]}  {r['nombre']}\n      {r['url']}")
     return 0

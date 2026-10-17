@@ -12,6 +12,7 @@ su fecha no se cita.
 | `2026-10-10-datos-civicos.md` | elecciones, Parlamento y compras del Estado: qué hay, las trampas medidas, los datos personales y por dónde empezar |
 | `2026-10-10-hojas-medicion.md` | las planillas de cálculo del catálogo: cuántas hay, que el `formato` declarado miente 23 de 24 veces, y el XLSX de MIDES con sus dos hojas |
 | `2026-10-17-oportunidades.md` | qué se toma de los proyectos y la literatura externa, y qué datos de Uruguay queda por leer, con las mediciones del catálogo del 17/10 |
+| `2026-10-17-mapa-del-catalogo.md` | el catálogo por sus dos endpoints (2.777 contra 2.716), qué son los 61 que el buscador no ve, y el histograma de formatos |
 
 ## El metodo
 

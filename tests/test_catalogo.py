@@ -164,3 +164,64 @@ class TestFormatoSinImportarMayusculas:
         monkeypatch.setattr(catalogo, "accion", self._falso({"csv zip": 8, "CSV ZIP": 7, "CSV": 9}, visto))
         catalogo.buscar("", formato="CSV ZIP")
         assert visto["fq"] == 'res_format:("CSV ZIP" OR "csv zip")'
+
+
+class TestMapaDelCatalogo:
+    """El mapa del catálogo: los dos endpoints no cuentan lo mismo (medido el 2026-10-17: 2.777 por
+    `package_list` y 2.716 por `package_search`), y el histograma de formatos sale completo del
+    facet, sin paginar."""
+
+    def test_formatos_usa_el_facet_completo(self, monkeypatch):
+        visto = {}
+
+        def falso(nombre, **p):
+            visto.update(nombre=nombre, **p)
+            return {"count": 2777, "facets": {"res_format": {"CSV": 1100, "PDF": 800}}, "results": []}
+
+        monkeypatch.setattr(catalogo, "accion", falso)
+        assert catalogo.formatos() == {"CSV": 1100, "PDF": 800}
+        assert visto["nombre"] == "package_search"
+        assert visto["rows"] == 0
+        assert visto["q"] == "*:*"
+        assert "res_format" in visto["facet.field"]
+
+    def test_todos_pagina_hasta_el_conteo(self, monkeypatch):
+        llamadas = []
+
+        def falso(nombre, **p):
+            llamadas.append(p["start"])
+            if p["start"] == 0:
+                return {"count": 1700, "results": [{"name": f"d{i}"} for i in range(1000)]}
+            return {"count": 1700, "results": [{"name": f"d{i}"} for i in range(1000, 1700)]}
+
+        monkeypatch.setattr(catalogo, "accion", falso)
+        nombres = catalogo.todos()
+        assert len(nombres) == 1700
+        assert llamadas == [0, 1000]
+
+    def test_faltantes_es_la_diferencia_entre_los_dos_endpoints(self, monkeypatch):
+        monkeypatch.setattr(catalogo, "nombres", lambda: ["a", "b", "c", "d", "e"])
+        monkeypatch.setattr(catalogo, "todos", lambda: ["a", "b", "c"])
+        assert catalogo.faltantes() == {"en_lista": 5, "en_busqueda": 3, "faltan": ["d", "e"]}
+
+    def test_el_buscador_no_puede_ver_mas_datasets_que_la_lista(self, monkeypatch):
+        monkeypatch.setattr(catalogo, "nombres", lambda: ["a"])
+        monkeypatch.setattr(catalogo, "todos", lambda: ["a", "z"])
+        with pytest.raises(CatalogoInvalido, match="no están en package_list"):
+            catalogo.faltantes()
+
+
+@pytest.mark.red
+def test_los_dos_endpoints_del_catalogo_real():
+    """El mismo catálogo por `package_list` y por `package_search`. Medido el 2026-10-17: 2.777 y
+    2.716, y los 61 que faltan son fichas `state=active` con cero recursos (visualizadores, apps).
+    Se afirma una relación (la búsqueda no ve más que la lista) y un orden de magnitud, no un número
+    exacto: el total puede bajar."""
+    en_lista = catalogo.nombres()
+    en_busqueda = catalogo.todos()
+    assert 2000 <= len(en_lista), f"package_list trajo {len(en_lista)} datasets"
+    assert set(en_busqueda) <= set(en_lista), "la búsqueda ve datasets que la lista no tiene"
+    print(
+        f"\npackage_list {len(en_lista)} · package_search {len(en_busqueda)}"
+        f" · faltan {len(set(en_lista) - set(en_busqueda))}"
+    )
