@@ -34,6 +34,7 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 | `uydatos.ursea` | URSEA y ANCAP, catálogo de datos abiertos | Precio de paridad de importación (PPI) de los combustibles, su desglose desde el FOB, y el precio ex planta de ANCAP, comparados mes a mes | Se compara **sin impuestos contra sin impuestos**; el PPI de una ventana rige el mes siguiente; el archivo ex planta de ANCAP es un registro acumulado con tres formatos de fecha y 93 pares contradictorios (todos de gases); una ventana del PPI termina antes de empezar; el recurso «PPI al consumidor final» fue pisado con otro archivo. |
 | `uydatos.parlamento` | Parlamento del Uruguay | Asistencias del Senado y Diputados por legislatura (desde 2005), proyectos entrados (desde 1985), leyes promulgadas, **pedidos de informes de Diputados** (uno por uno, con su estado) y la nómina | Hay 3 a 4 veces más personas que bancas (los suplentes): un ranking sin un mínimo de citaciones no dice nada. No hay identificador de persona, así que los homónimos no se pueden separar. Todos los recursos se llaman `csv`. |
 | `uydatos.elecciones` | Corte Electoral | Resultados por mesa (totales, votos por partido, plan circuital) de las nacionales 2024, el balotaje 2024 y las departamentales 2025 | Los observados no están en cada mesa: se escrutan en **mesas especiales** sin habilitados ni localidad. Sumar todo da el definitivo; un mapa por localidad nunca cierra con el total. |
+| `uydatos.sanciones` | Defensa del Consumidor (SIPC), catálogo de datos abiertos | Sanciones aplicadas a empresas por Defensa del Consumidor | El nombre del recurso no es el nombre del archivo, el `rut` viene con relleno y una fila tiene un RUT de 3 caracteres. |
 | `uydatos.limites` | INE, vía la IDE y el MIDES (WFS) | Los 19 departamentos y las 652 localidades, con población y viviendas 2023, y en cuál cae un punto | Hay 20 polígonos de departamentos: uno es el **límite contestado** con Brasil, con el código de Artigas. Sin `srsName=EPSG:4326` la capa llega en metros y ningún punto cae adentro. |
 | `uydatos.ideuy` | IDE.uy (direcciones.ide.uy) | Coordenadas de una dirección o esquina, con su calidad | Ante lo que no encuentra devuelve el centro de la localidad, una puerta vecina u otra calle, sin error. |
 | `uydatos.rut` | Offline | Dígito verificador de RUT y cédula | Excel convierte el RUT en float y se come el cero inicial. |
@@ -97,6 +98,8 @@ python -m uydatos.catalogo inia-precipitacion-temps-extremas-sg
 python -m uydatos.inumet bajar precipitacion datos/inumet_precip.csv
 python -m uydatos.inumet diaria datos/inumet_precip.csv precip_horario "Salto G3" suma
 python -m uydatos.ideuy "Avenida 18 de Julio 1360" --localidad Montevideo --departamento Montevideo
+python -m uydatos.sanciones bajar datos/sanciones.csv
+python -m uydatos.sanciones resumen datos/sanciones.csv
 ```
 
 ## Lo que estos lectores se niegan a hacer
@@ -106,6 +109,12 @@ python -m uydatos.ideuy "Avenida 18 de Julio 1360" --localidad Montevideo --depa
 - **Convertir un índice en inflación.** Eso es una decisión de análisis, no una lectura.
 - **Inventar unidades** que la fuente no declara.
 - **Elegir por vos** qué cotización corresponde a un fin fiscal.
+
+## Datos personales
+
+`uydatos.sanciones` devuelve `razon_social` y `rut` de personas jurídicas y, en algunos casos, de
+personas físicas: el archivo es público y está en el catálogo abierto, pero **qué se versiona y qué
+se cruza no lo decide el lector**. El repositorio no publica esos datos.
 
 ## Tests
 

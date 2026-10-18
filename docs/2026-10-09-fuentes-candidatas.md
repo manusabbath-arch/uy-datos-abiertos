@@ -91,6 +91,10 @@ Trampas medidas para ese lector: `cp1252` con `;`; el `rut` viene con **relleno 
 derecha** (`'217795170014    '`, 1.527 de 1.528 con 12 dígitos tras el `.strip()`); **una fila con
 un RUT de 3 dígitos** (un vacío mal exportado) que no se descarta en silencio.
 
+**Medido de nuevo el 2026-10-17**: mismo sha256 (`241a78a1…`), 1.528 filas, 1.443 RUT con relleno,
+1 con 3 caracteres, 0 en Salto. El recurso se llama «Sanciones aplicadas a empresas»: no se elige
+por el nombre del archivo. Lector: `uydatos.sanciones` (0.13.0).
+
 ### 3.2 ANCAP: la cantidad de ventas — el denominador de mercado
 
 Además del precio (`ancap-precio-combustible-pe`, que `uydatos.ancap` ya lee), ANCAP publica

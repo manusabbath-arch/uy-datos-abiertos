@@ -31,6 +31,7 @@ from uydatos import (
     parlamento,
     red,
     salto_grande,
+    sanciones,
     ursea,
 )
 
@@ -54,6 +55,7 @@ LECTORES = {
     "ursea": ursea,
     "red": red,
     "salto_grande": salto_grande,
+    "sanciones": sanciones,
 }
 
 
