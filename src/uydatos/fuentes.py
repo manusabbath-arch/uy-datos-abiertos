@@ -257,6 +257,12 @@ FUENTES: dict[str, Fuente] = {
 }
 
 
+# Las fuentes que se republican solas: su fecha cambia todos los días y no dice nada. El aviso del
+# lunes tiene que distinguirlas, porque un aviso que grita todas las semanas se ignora —y con él, las
+# fuentes que sí importan. Medido el 17/10: los seis CSV de INUMET ya declaraban el 18/10.
+CADENCIA: dict[str, str] = {"inumet": "diaria"}
+
+
 def deriva(lector: str) -> dict:
     """¿El recurso que este lector usa se modificó después de la última medición? **Sale a la red.**
 
@@ -328,6 +334,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"{nombre:<14} ERROR {e}")
             continue
         marca = "SE MOVIÓ" if r["movido"] else "igual"
+        if r["movido"] and nombre in CADENCIA:
+            marca = f"se movió ({CADENCIA[nombre]}, esperado)"
         print(f"{nombre:<14} {marca:<9} {r['motivo']}".rstrip())
         for d in r["detalle"]:
             if d["cambio"]:

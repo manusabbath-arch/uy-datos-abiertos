@@ -64,6 +64,26 @@ def test_deriva_rechaza_un_lector_que_no_esta():
         fuentes.deriva("no-existe")
 
 
+def test_el_estado_no_grita_por_una_fuente_que_se_publica_todos_los_dias(monkeypatch, capsys):
+    """INUMET republica sus seis CSV todos los días, así que su fecha cambia siempre. Un aviso que
+    grita todas las semanas se ignora, y con él las fuentes que sí importan. Medido el 17/10: el
+    catálogo ya declaraba el 18/10."""
+
+    def falsos(dataset: str) -> list[dict]:
+        return _recursos("2026-10-18T09:00:00" if dataset.startswith("inumet-") else "2026-10-20T09:00:00")
+
+    monkeypatch.setattr(catalogo, "recursos", falsos)
+    assert fuentes.main(["estado"]) == 0
+    lineas = {
+        linea.split()[0]: linea
+        for linea in capsys.readouterr().out.splitlines()
+        if linea and not linea.startswith("    ")
+    }
+    assert "esperado" in lineas["inumet"]
+    assert "SE MOVIÓ" not in lineas["inumet"]
+    assert "SE MOVIÓ" in lineas["ancap"], "una fuente que no se republica sola sí tiene que avisar"
+
+
 @pytest.mark.red
 def test_cada_fuente_del_manifiesto_resuelve_a_un_recurso():
     """El manifiesto contra el catálogo real: cada dataset existe y cada lector con nombre de

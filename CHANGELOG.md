@@ -20,7 +20,9 @@
   URLs: pregunta cuál es el recurso vigente, que es la lección de la 0.12.1. Los ids de dataset se
   importan de la constante que cada módulo ya declara, así que no se escriben dos veces; `movido`
   significa «volver a medir», no «el dato cambió». `python -m uydatos.fuentes estado` es el comando
-  del lunes, y el CI lo pega en el resumen del trabajo.
+  del lunes, y el CI lo pega en el resumen del trabajo. `CADENCIA` marca las fuentes que se
+  republican solas (INUMET, diaria): el aviso las distingue, porque uno que grita todas las semanas
+  se ignora —y con él, las que sí importan.
 - **Nuevo: `uydatos.revisiones`**, `comparar()` entre dos copias de la misma fuente: claves nuevas,
   borradas y cambiadas, filas sin clave, y un rechazo cuando el encabezado cambió («un cambio de
   columnas es otra fuente») o cuando la clave se repite. Sin dependencias y sin red.
