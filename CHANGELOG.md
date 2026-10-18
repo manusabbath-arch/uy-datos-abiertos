@@ -2,6 +2,43 @@
 
 ## Sin publicar
 
+## 0.13.0 — 2026-10-17
+
+- **Nuevo: `uydatos.sanciones`**, las sanciones aplicadas a empresas por Defensa del Consumidor:
+  1.528 resoluciones de 2017 a 2024, con RUT, razón social, motivo, fecha y monto. Trampas medidas: el
+  recurso se llama «Sanciones aplicadas a empresas» y **no** como el archivo, así que el lector toma el
+  único CSV del dataset; el `rut` viene **con relleno a la derecha** (1.443 de 1.528) y una fila tiene
+  un RUT de 3 caracteres, que se cuenta en vez de arreglarse; la fecha es `d/m/AAAA` de ancho variable;
+  `monto_ur` es entero y **0 es un cero medido**, no un nulo; y la única resolución de Salto no existe
+  (todas son de Montevideo). El archivo tiene el **mismo sha256 que el 09/10** aunque el catálogo
+  declare `metadata_modified` 2026-03-22: una fecha del catálogo no es una revisión.
+- **Datos personales**: el lector devuelve `razon_social` y `rut` de personas jurídicas y, en algunos
+  casos, de personas físicas. El archivo es público, pero el repositorio no publica esos datos y el
+  README declara el límite.
+- **Nuevo: `uydatos.fuentes`**, el manifiesto de las fuentes —una fila por lector, 21— y `deriva()`,
+  que pregunta al catálogo **si el recurso se modificó después de la última medición**. No guarda
+  URLs: pregunta cuál es el recurso vigente, que es la lección de la 0.12.1. Los ids de dataset se
+  importan de la constante que cada módulo ya declara, así que no se escriben dos veces; `movido`
+  significa «volver a medir», no «el dato cambió». `python -m uydatos.fuentes estado` es el comando
+  del lunes, y el CI lo pega en el resumen del trabajo.
+- **Nuevo: `uydatos.revisiones`**, `comparar()` entre dos copias de la misma fuente: claves nuevas,
+  borradas y cambiadas, filas sin clave, y un rechazo cuando el encabezado cambió («un cambio de
+  columnas es otra fuente») o cuando la clave se repite. Sin dependencias y sin red.
+- **`uydatos.catalogo` suma el mapa del catálogo**: `nombres()`, `todos()`, `faltantes()` y
+  `formatos()`, con `--faltantes` y `--formatos` en la línea de comandos. Medido el 17/10: el endpoint
+  de la lista trae **2.777** datasets y el buscador **2.716**, y los 61 que faltan son fichas
+  `state=active` con **cero recursos** (visualizadores, apps, webservices), no datasets borrados. El
+  facet de formatos cuenta datasets, no recursos: **2.553 de 2.716 (94%) declaran al menos un CSV**, y
+  `res_format` tiene nueve formas de decir CSV.
+- **Nuevo: `tests/test_trampas.py`**, las trampas declaradas reproducidas sobre archivos armados con
+  `tmp_path` (dos BOM en ANCAP, la fila de error de INUMET, la estación fantasma, la respuesta mala del
+  BCU, el XLSX con extensión `.xls`), más la mitad que faltaba: **el archivo válido tiene que pasar**.
+  Un lector que rechaza todo pasa cualquier guarda de rechazo.
+- CI: 3.14 en la matriz (esta máquina corre 3.14.7) y el estado de las fuentes en el resumen del
+  trabajo del lunes.
+- Docs nuevos: `docs/2026-10-17-oportunidades.md` (qué se toma de DBnomics, la API de series de
+  Argentina, Frictionless, el análisis de mutación del *Fuzzing Book* y el estudio de link rot, y qué
+  datos de Uruguay quedan por leer) y `docs/2026-10-17-mapa-del-catalogo.md`.
 - **Docstring de `compras`**: los estados de 2025 son 3 `cancelled`, 5 `unsuccessful` y 8 `pending` (medido sobre el
   archivo de 2025), no 360 y 110. Sin cambio de comportamiento. El test de red de INUMET afirma un piso (el dataset crece
   todos los días) en vez de un conteo exacto.

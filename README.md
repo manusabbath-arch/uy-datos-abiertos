@@ -122,7 +122,17 @@ se cruza no lo decide el lector**. El repositorio no publica esos datos.
 pip install -e ".[test]"
 pytest              # sin red: todo con archivos de prueba
 pytest -m red       # contra las fuentes reales
+pytest tests/test_trampas.py   # las trampas declaradas, reproducidas sobre archivos armados
 ```
+
+Y una vez por semana, el lunes:
+
+```sh
+python -m uydatos.fuentes estado   # qué fuente del catálogo se movió desde la última medición
+```
+
+`estado` pregunta la fecha del recurso que cada lector usa, no la de una URL recordada: `movido`
+significa «volver a medir», no «el dato cambió».
 
 ## Datos
 

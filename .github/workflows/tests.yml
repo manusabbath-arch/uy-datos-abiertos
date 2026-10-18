@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python: ["3.10", "3.11", "3.12", "3.13"]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         include:
           - os: windows-latest
             python: "3.13"
@@ -40,3 +40,9 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
       - name: Tests contra las fuentes reales
         run: uv run --python 3.13 --with pytest --with openpyxl --with xlrd --with-editable . pytest -q -m red
+      - name: Qué fuente se movió
+        # continue-on-error: si el catálogo no contesta, el trabajo igual publica el resultado de los
+        # tests, que es la información principal. Una fecha del catálogo no es una revisión (medido
+        # el 17/10 con las sanciones del DSS): `movido` significa «volver a medir».
+        continue-on-error: true
+        run: uv run --python 3.13 --with-editable . python -m uydatos.fuentes estado >> "$GITHUB_STEP_SUMMARY"

@@ -27,8 +27,11 @@ Módulos:
 - `mides`        — la familia de indicadores de MIDES, todos con la misma forma (copia de 2019).
 - `observatorio` — los indicadores del Observatorio Social del MIDES, de su página viva en gub.uy.
 - `hojas`        — hojas de cálculo XLSX y XLS, con el motor elegido por la firma del archivo.
+- `sanciones`    — sanciones a empresas de Defensa del Consumidor, con su límite de datos personales.
+- `fuentes`      — el manifiesto de las fuentes y si alguna se movió desde la última medición.
+- `revisiones`   — qué cambió entre dos copias de una fuente, y si el cambio es de dominio.
 """
 
-__version__ = "0.12.1"
+__version__ = "0.13.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"
