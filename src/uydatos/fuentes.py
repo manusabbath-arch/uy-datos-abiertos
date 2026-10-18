@@ -31,6 +31,7 @@ from uydatos import (
     inia,
     inumet,
     parlamento,
+    sanciones,
     ursea,
 )
 
@@ -219,6 +220,18 @@ FUENTES: dict[str, Fuente] = {
         "recurso": None,
         "medido": "2026-10-17",
         "trampa": "El arreglo SOAP encoded se llama item: buscar Estacion da lista vacía sin error.",
+    },
+    "sanciones": {
+        "lector": "sanciones",
+        "tipo": "catalogo",
+        "datasets": (sanciones.DATASET,),
+        # El lector elige el ÚNICO CSV del dataset: no hay nombre de archivo que vigilar.
+        "recurso": None,
+        "medido": "2026-10-17",
+        "trampa": (
+            "El nombre del recurso no es el nombre del archivo, el `rut` viene con relleno y una "
+            "fila tiene un RUT de 3 caracteres."
+        ),
     },
     "semanas": {
         "lector": "semanas",
