@@ -1,0 +1,282 @@
+{
+  "fecha": "2026-10-19",
+  "fuentes": [
+    {
+      "lector": "ancap",
+      "filas": 26618,
+      "columnas": [
+        "anio",
+        "mes",
+        "producto",
+        "precio",
+        "unidad"
+      ],
+      "bytes": 893940,
+      "sha256": "aacfbc064d4a93d1e4f97b8b6d6b1b7905d50ac75ce970fd71f510c29c6d6801",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "ancap_ventas",
+      "filas": 1223,
+      "columnas": [
+        "mercado",
+        "anio",
+        "mes",
+        "familia",
+        "linea",
+        "bandera",
+        "cantidad",
+        "unidad"
+      ],
+      "bytes": 73171,
+      "sha256": "a2654fbf667d17cc467b2b790fc63ca5b491f64e3faf15848e3444a2d66f7adc",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "bcu",
+      "filas": 30,
+      "columnas": [
+        "fecha",
+        "valor"
+      ],
+      "bytes": 49106270,
+      "sha256": "a4e1876d4d8f5fdcdc5bc483ec443b6cdbcbc2ce713a1c651e68ad3251acad3d",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "catalogo",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "no es una fuente: se mide con `python -m uydatos.catalogo --faltantes`"
+    },
+    {
+      "lector": "compras",
+      "filas": 140144,
+      "columnas": [
+        "ocid",
+        "fecha",
+        "comprador",
+        "proveedor",
+        "estado",
+        "items",
+        "importes",
+        "sin_moneda"
+      ],
+      "bytes": 27132122,
+      "sha256": "7c0b8ed906118bf2316562702ee9627e7332acdb8853f4b5beee5abf0c302f42",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "elecciones",
+      "filas": 7352,
+      "columnas": [
+        "opciones",
+        "codigo_departamento",
+        "departamento",
+        "crv",
+        "serie",
+        "habilitados",
+        "emitidos",
+        "no_observados",
+        "observados",
+        "anulados",
+        "en_blanco",
+        "municipio",
+        "tipo"
+      ],
+      "bytes": 285506,
+      "sha256": "a50cf3173b15ac6fca312f040958b40acb3897e2381bf313da7d460978cbcc70",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "hojas",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "necesita un archivo de planilla"
+    },
+    {
+      "lector": "ibge",
+      "filas": 562,
+      "columnas": [
+        "periodo",
+        "valor"
+      ],
+      "bytes": 170403,
+      "sha256": "f3b75095981322b5f0b2b261d18b76c32a5430812ef491d98c5134a368c26b97",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "ideuy",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "necesita una dirección"
+    },
+    {
+      "lector": "indec",
+      "filas": 117,
+      "columnas": [
+        "periodo",
+        "valor"
+      ],
+      "bytes": 4265,
+      "sha256": "2665c6881e89ad8f651a863df3b6426711b9d30006c54a286e54ec8e99b33fc6",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "inia",
+      "filas": 20526,
+      "columnas": [
+        "fecha",
+        "temperaturaMaxima",
+        "temperaturaMinima",
+        "pluviometro"
+      ],
+      "bytes": 49106270,
+      "sha256": "a4e1876d4d8f5fdcdc5bc483ec443b6cdbcbc2ce713a1c651e68ad3251acad3d",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "inumet",
+      "filas": 393534,
+      "columnas": [
+        "fecha",
+        "estacion",
+        "temp_aire"
+      ],
+      "bytes": 14287903,
+      "sha256": "720edc0f8867f26c603da70e5d2b11cd72a6733ffdf44a87c3dd338abc203a3d",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "limites",
+      "filas": 20,
+      "columnas": [
+        "codigo",
+        "nombre",
+        "departamento",
+        "tipo",
+        "datos",
+        "bbox",
+        "poligonos"
+      ],
+      "bytes": 4709102,
+      "sha256": "f534e3110e003be9556322c178f2af18a94541eed30277d10f035bd697015a34",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "mides",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "necesita un número de indicador"
+    },
+    {
+      "lector": "observatorio",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "necesita un slug de indicador"
+    },
+    {
+      "lector": "parlamento",
+      "filas": 508,
+      "columnas": [
+        "fecha",
+        "asunto",
+        "carpetas",
+        "titulo",
+        "tipo"
+      ],
+      "bytes": 81544,
+      "sha256": "34a2c3e12b05153d8c9116745aa5f3acc60d1ab0a2004f15ba7915267813b79a",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "rut",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "no lee una fuente: calcula el dígito verificador"
+    },
+    {
+      "lector": "salto_grande",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "necesita una estación y una variable"
+    },
+    {
+      "lector": "sanciones",
+      "filas": 1528,
+      "columnas": [
+        "razon_social",
+        "nombre_comercial",
+        "rut",
+        "departamento",
+        "fecha",
+        "motivo",
+        "tipo",
+        "monto_ur"
+      ],
+      "bytes": 168759,
+      "sha256": "241a78a15e951bf960f93efc12aebe0d04dc343b24198a2fa4899d1872dd4cd0",
+      "ok": true,
+      "motivo": ""
+    },
+    {
+      "lector": "semanas",
+      "filas": 0,
+      "columnas": [],
+      "bytes": 0,
+      "sha256": "",
+      "ok": false,
+      "motivo": "no lee una fuente: cuenta semanas ISO"
+    },
+    {
+      "lector": "ursea",
+      "filas": 580,
+      "columnas": [
+        "inicio",
+        "fin",
+        "vigencia",
+        "dias",
+        "producto",
+        "sin_impuestos",
+        "sin_impuestos_con_agro",
+        "con_impuestos"
+      ],
+      "bytes": 49106270,
+      "sha256": "45843cc6dcf7717290bc2d40ffe9e40bb739167234344ef7acce288c5371a083",
+      "ok": true,
+      "motivo": ""
+    }
+  ]
+}

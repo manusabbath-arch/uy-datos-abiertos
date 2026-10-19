@@ -197,13 +197,13 @@ VERIFICAR: dict[str, Callable[[Path], dict]] = {
 }
 
 PENDIENTES: dict[str, str] = {
-    "catalogo": "el catálogo no es una fuente: se mide con `python -m uydatos.catalogo --faltantes`",
-    "hojas": "un archivo de planilla",
-    "ideuy": "una dirección",
-    "mides": "un número de indicador",
-    "observatorio": "un slug de indicador",
+    "catalogo": "no es una fuente: se mide con `python -m uydatos.catalogo --faltantes`",
+    "hojas": "necesita un archivo de planilla",
+    "ideuy": "necesita una dirección",
+    "mides": "necesita un número de indicador",
+    "observatorio": "necesita un slug de indicador",
     "rut": "no lee una fuente: calcula el dígito verificador",
-    "salto_grande": "una estación y una variable",
+    "salto_grande": "necesita una estación y una variable",
     "semanas": "no lee una fuente: cuenta semanas ISO",
 }
 
@@ -219,7 +219,7 @@ def verificar(lector: str, destino: Optional[Path] = None) -> dict:
         raise KeyError(f"{lector}: no está en el manifiesto")
     base = {"lector": lector, "filas": 0, "columnas": [], "bytes": 0, "sha256": ""}
     if lector in PENDIENTES:
-        return {**base, "ok": False, "motivo": f"requiere {PENDIENTES[lector]}"}
+        return {**base, "ok": False, "motivo": PENDIENTES[lector]}
     if destino is not None:
         destino.mkdir(parents=True, exist_ok=True)
         return _en(lector, destino, base)

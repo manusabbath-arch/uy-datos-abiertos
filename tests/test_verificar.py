@@ -53,7 +53,7 @@ def test_verificar_sella_un_conjunto_de_archivos(monkeypatch, tmp_path):
 def test_verificar_dice_que_falta_un_parametro():
     r = verificar.verificar("ideuy")
     assert r["ok"] is False
-    assert r["motivo"].startswith("requiere") and "dirección" in r["motivo"]
+    assert "dirección" in r["motivo"]
 
 
 def test_verificar_atrapa_el_rechazo_del_lector(monkeypatch, tmp_path):
