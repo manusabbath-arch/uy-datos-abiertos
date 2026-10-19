@@ -12,9 +12,11 @@ de las dos cambió.
 
 from __future__ import annotations
 
+import argparse
 import csv
+import json
 from pathlib import Path
-from typing import Sequence
+from typing import Optional, Sequence
 
 from uydatos.errores import DatosInvalidos
 
@@ -108,3 +110,142 @@ def comparar(
         "claves_quitadas": [list(k) for k in quitadas[:muestra]],
         "sin_clave": sin_clave,
     }
+
+
+def _numero(texto: str) -> Optional[float]:
+    """El valor como número, o `None`. No adivina separadores de miles: si no es un número limpio,
+    la fila se cuenta en `no_numericas` y no se compara."""
+    limpio = texto.strip().replace(" ", "")
+    if not limpio:
+        return None
+    try:
+        return float(limpio)
+    except ValueError:
+        return None
+
+
+def _por_clave(encabezado: list[str], filas: list[list[str]], clave: Sequence[str]) -> dict[tuple[str, ...], list[str]]:
+    faltan = [c for c in clave if c not in encabezado]
+    if faltan:
+        raise RevisionInvalida(f"no están las columnas de la clave: {faltan}")
+    posiciones = [encabezado.index(c) for c in clave]
+    indice: dict[tuple[str, ...], list[str]] = {}
+    for fila in filas:
+        k = tuple(fila[i] for i in posiciones)
+        if k in indice:
+            raise RevisionInvalida(f"la clave {k} se repite: no se puede decir cuál de las dos cambió")
+        indice[k] = fila
+    return indice
+
+
+def revisadas(
+    antes: Path,
+    despues: Path,
+    *,
+    clave: Sequence[str],
+    valor: str,
+    delimitador: str = ";",
+    codificacion: str = "utf-8",
+    tolerancia: float = 0.0,
+    muestra: int = 20,
+) -> dict:
+    """Qué filas que YA estaban cambiaron de `valor`: la revisión del pasado, no las altas y bajas.
+
+    Un archivo que crece agrega filas al final y se nota; uno que se reprocesa **reescribe el
+    pasado** y el total no cambia, así que nadie se entera. Medido el 2026-10-17: el archivo de
+    sanciones declara `metadata_modified` 2026-03-22 y su sha256 es el del 09/10 — la fecha se movió
+    sin que el archivo cambiara; al revés, una fuente puede cambiar el archivo sin mover la fecha.
+
+    `tolerancia` está para la fuente que publica con redondeo: por debajo de eso, no es revisión.
+    Las filas con un valor que no es número se cuentan en `no_numericas`, no se saltean en silencio.
+    """
+    enc_a, filas_a = _leer(antes, delimitador, codificacion)
+    enc_d, filas_d = _leer(despues, delimitador, codificacion)
+    if enc_a != enc_d:
+        raise RevisionInvalida(f"los encabezados no coinciden: {antes.name} contra {despues.name}")
+    if valor not in enc_d:
+        raise RevisionInvalida(f"no hay columna `{valor}`: están {enc_d}")
+    i_valor = enc_d.index(valor)
+    a = _por_clave(enc_d, filas_a, clave)
+    d = _por_clave(enc_d, filas_d, clave)
+    revisadas_, no_numericas = [], 0
+    for k in sorted(a.keys() & d.keys()):
+        va, vd = _numero(a[k][i_valor]), _numero(d[k][i_valor])
+        if va is None or vd is None:
+            no_numericas += 1
+            continue
+        delta = vd - va
+        if abs(delta) > tolerancia:
+            revisadas_.append({"clave": list(k), "antes": va, "despues": vd, "delta": round(delta, 6)})
+    mayores = sorted(revisadas_, key=lambda r: abs(r["delta"]), reverse=True)[:muestra]
+    return {
+        "revisadas": len(revisadas_),
+        "nuevas": len(d.keys() - a.keys()),
+        "borradas": len(a.keys() - d.keys()),
+        "no_numericas": no_numericas,
+        "mayores": mayores,
+    }
+
+
+def desde_json(antes: Path, despues: Path, *, variacion: float = 0.2, minimo: int = 10) -> dict:
+    """Qué cambió entre dos informes de `python -m uydatos.verificar --json`.
+
+    El umbral de filas es `max(minimo, variación × las de antes)`: una fuente que agrega cien filas
+    por semana no es noticia; una que pierde el 20% sí. Un cambio de columnas se informa antes que
+    el de filas, porque explica el otro.
+    """
+
+    def cargar(p: Path) -> dict[str, dict]:
+        datos = json.loads(p.read_text(encoding="utf-8"))
+        return {f["lector"]: f for f in datos["fuentes"]}
+
+    a, d = cargar(antes), cargar(despues)
+    rompieron, columnas, filas = [], [], []
+    for lector in sorted(a.keys() & d.keys()):
+        fa, fd = a[lector], d[lector]
+        if fa["ok"] and not fd["ok"]:
+            rompieron.append({"lector": lector, "motivo": fd["motivo"]})
+            continue
+        if not fd["ok"]:
+            continue
+        nuevas = sorted(set(fd["columnas"]) - set(fa["columnas"]))
+        idas = sorted(set(fa["columnas"]) - set(fd["columnas"]))
+        if nuevas or idas:
+            columnas.append({"lector": lector, "nuevas": nuevas, "idas": idas})
+            continue
+        if fa["ok"]:
+            umbral = max(minimo, int(fa["filas"] * variacion))
+            if abs(fd["filas"] - fa["filas"]) > umbral:
+                filas.append({"lector": lector, "antes": fa["filas"], "despues": fd["filas"]})
+    tocados = {r["lector"] for r in rompieron} | {c["lector"] for c in columnas} | {f["lector"] for f in filas}
+    return {
+        "aparecen": sorted(set(d) - set(a)),
+        "desaparecen": sorted(set(a) - set(d)),
+        "rompieron": rompieron,
+        "columnas": columnas,
+        "filas": filas,
+        "sanos": sorted(lector for lector in a.keys() & d.keys() if lector not in tocados),
+    }
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    ap = argparse.ArgumentParser(prog="python -m uydatos.revisiones", description=__doc__.splitlines()[0])
+    sub = ap.add_subparsers(dest="orden", required=True)
+    j = sub.add_parser("desde-json", help="compara los dos últimos informes de verificar de un directorio")
+    j.add_argument("directorio", type=Path)
+    args = ap.parse_args(argv)
+    informes = sorted(args.directorio.glob("fuentes-*.json"))
+    if len(informes) < 2:
+        print(f"hacen falta dos informes en {args.directorio}: hay {len(informes)}")
+        return 2
+    r = desde_json(informes[-2], informes[-1])
+    print(f"# {informes[-2].name} → {informes[-1].name}")
+    for clave in ("rompieron", "columnas", "filas", "aparecen", "desaparecen"):
+        for fila in r[clave]:
+            print(f"{clave:<12} {fila}")
+    print(f"sanos {len(r['sanos'])}: {', '.join(r['sanos']) or 'ninguno'}")
+    return 0 if not r["rompieron"] and not r["columnas"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

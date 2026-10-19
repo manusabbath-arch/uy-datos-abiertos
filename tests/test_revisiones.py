@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from uydatos import revisiones
@@ -83,3 +85,90 @@ def test_una_codificacion_equivocada_se_rechaza_con_el_archivo(tmp_path):
         comparar(a, b, clave=("producto", "anio", "mes"))
     r = comparar(a, b, clave=("producto", "anio", "mes"), codificacion="cp1252")
     assert r["claves_agregadas"] == [["Pérez", "2026", "8"]]
+
+
+def _csv(ruta, filas: list[str], enc: str = "periodo;valor"):
+    ruta.write_text(enc + "\n" + "\n".join(filas) + "\n", encoding="utf-8")
+    return ruta
+
+
+def test_revisadas_encuentra_el_pasado_reescrito(tmp_path):
+    antes = _csv(tmp_path / "a.csv", ["2026-01;10", "2026-02;20", "2026-03;30"])
+    despues = _csv(tmp_path / "b.csv", ["2026-01;10", "2026-02;25", "2026-03;30"])
+    r = revisiones.revisadas(antes, despues, clave=["periodo"], valor="valor")
+    assert r["revisadas"] == 1
+    assert r["mayores"][0]["clave"] == ["2026-02"]
+    assert r["mayores"][0]["antes"] == 20.0 and r["mayores"][0]["despues"] == 25.0
+    assert r["mayores"][0]["delta"] == 5.0
+
+
+def test_revisadas_no_cuenta_altas_ni_bajas(tmp_path):
+    antes = _csv(tmp_path / "a.csv", ["2026-01;10"])
+    despues = _csv(tmp_path / "b.csv", ["2026-01;10", "2026-02;20", "2026-03;30"])
+    r = revisiones.revisadas(antes, despues, clave=["periodo"], valor="valor")
+    assert r["revisadas"] == 0
+    assert r["nuevas"] == 2 and r["borradas"] == 0
+
+
+def test_revisadas_respeta_la_tolerancia(tmp_path):
+    antes = _csv(tmp_path / "a.csv", ["2026-01;10.0"])
+    despues = _csv(tmp_path / "b.csv", ["2026-01;10.4"])
+    assert revisiones.revisadas(antes, despues, clave=["periodo"], valor="valor")["revisadas"] == 1
+    assert revisiones.revisadas(antes, despues, clave=["periodo"], valor="valor", tolerancia=0.5)["revisadas"] == 0
+
+
+def test_revisadas_rechaza_si_no_esta_la_columna_del_valor(tmp_path):
+    antes = _csv(tmp_path / "a.csv", ["2026-01;10"])
+    with pytest.raises(RevisionInvalida, match="no hay columna"):
+        revisiones.revisadas(antes, antes, clave=["periodo"], valor="monto")
+
+
+def test_revisadas_cuenta_las_que_no_son_numeros(tmp_path):
+    """Un valor no numérico no se puede restar: se cuenta, no se saltea en silencio."""
+    antes = _csv(tmp_path / "a.csv", ["2026-01;s/d"])
+    despues = _csv(tmp_path / "b.csv", ["2026-01;10"])
+    r = revisiones.revisadas(antes, despues, clave=["periodo"], valor="valor")
+    assert r["revisadas"] == 0 and r["no_numericas"] == 1
+
+
+def _fuente(lector, ok=True, filas=100, columnas=("a", "b"), motivo=""):
+    return {
+        "lector": lector,
+        "ok": ok,
+        "filas": filas,
+        "columnas": list(columnas),
+        "bytes": 1,
+        "sha256": "x",
+        "motivo": motivo,
+    }
+
+
+def _informe(ruta, fuentes: list[dict]):
+    ruta.write_text(json.dumps({"fecha": "2026-10-18", "fuentes": fuentes}, ensure_ascii=False), encoding="utf-8")
+    return ruta
+
+
+def test_desde_json_dice_que_se_rompio_y_que_cambio_de_columnas(tmp_path):
+    antes = _informe(tmp_path / "fuentes-2026-10-11.json", [_fuente("ancap"), _fuente("inumet")])
+    despues = _informe(
+        tmp_path / "fuentes-2026-10-18.json",
+        [
+            _fuente("ancap", ok=False, filas=0, columnas=[], motivo="faltan columnas"),
+            _fuente("inumet", columnas=["a", "c"]),
+        ],
+    )
+    r = revisiones.desde_json(antes, despues)
+    assert [x["lector"] for x in r["rompieron"]] == ["ancap"]
+    assert r["columnas"] == [{"lector": "inumet", "nuevas": ["c"], "idas": ["b"]}]
+    assert r["sanos"] == []
+
+
+def test_desde_json_avisa_una_caida_de_filas_y_lo_que_aparece(tmp_path):
+    antes = _informe(tmp_path / "fuentes-2026-10-11.json", [_fuente("inia", filas=1000, columnas=["a"])])
+    despues = _informe(
+        tmp_path / "fuentes-2026-10-18.json",
+        [_fuente("inia", filas=12, columnas=["a"]), _fuente("sanciones", filas=10, columnas=["a"])],
+    )
+    r = revisiones.desde_json(antes, despues)
+    assert r["filas"] == [{"lector": "inia", "antes": 1000, "despues": 12}]
+    assert r["aparecen"] == ["sanciones"]
