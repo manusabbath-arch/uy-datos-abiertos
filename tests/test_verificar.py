@@ -134,3 +134,41 @@ def test_falla_si_cambio_solo_cuenta_rompieron_y_columnas(monkeypatch, tmp_path)
     base = _linea_de_base(tmp_path / "base.json", 100, ["a", "b"])
     salida = tmp_path / "hoy.json"
     assert verificar.main(["--salida", str(salida), "--baseline", str(base), "--falla-si-cambio", "ancap"]) == 1
+
+
+def test_el_esquema_se_lee_de_un_informe_y_no_baja_nada(tmp_path, capsys):
+    informe = tmp_path / "fuentes.json"
+    informe.write_text(
+        json.dumps(
+            {
+                "fecha": "2026-10-19",
+                "fuentes": [
+                    {
+                        "lector": "ancap",
+                        "ok": True,
+                        "filas": 26618,
+                        "columnas": ["fecha", "producto"],
+                        "bytes": 1,
+                        "sha256": "x",
+                        "motivo": "",
+                    },
+                    {
+                        "lector": "ideuy",
+                        "ok": False,
+                        "filas": 0,
+                        "columnas": [],
+                        "bytes": 0,
+                        "sha256": "",
+                        "motivo": "requiere una dirección",
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    assert verificar.main(["--esquema", str(informe)]) == 0
+    salida = capsys.readouterr().out
+    assert "informe del 2026-10-19" in salida
+    assert "ancap" in salida and "fecha, producto" in salida
+    assert "ideuy" in salida and "requiere una dirección" in salida

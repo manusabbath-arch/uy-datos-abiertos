@@ -239,6 +239,21 @@ def _en(lector: str, directorio: Path, base: dict) -> dict:
     return {**base, **forma, "ok": True, "motivo": "", "bytes": bytes_, "sha256": sha}
 
 
+def esquema(informe: dict) -> str:
+    """El diccionario observado: qué columnas devuelve hoy cada fuente, con su fecha.
+
+    No declara tipos a propósito: el paquete no los declara en ningún lado, y un tipo inventado
+    sería una promesa que el lector no cumple. Es el contrato tal como se midió, no como se desearía.
+    """
+    lineas = [f"# El contrato observado de las fuentes (informe del {informe['fecha']})"]
+    for f in informe["fuentes"]:
+        if f["ok"]:
+            lineas.append(f"{f['lector']:<14} {f['filas']:>7} filas  {', '.join(f['columnas'])}")
+        else:
+            lineas.append(f"{f['lector']:<14} {'--':>7}       {f['motivo']}")
+    return "\n".join(lineas) + "\n"
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m uydatos.verificar", description=__doc__.splitlines()[0])
     ap.add_argument("lectores", nargs="*", help="por defecto, todas las del manifiesto")
@@ -251,12 +266,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     ap.add_argument("--destino", type=Path, help="deja los archivos bajados en este directorio")
     ap.add_argument("--baseline", type=Path, help="compara contra este informe y escribe qué cambió")
+    ap.add_argument("--esquema", type=Path, help="lee un informe ya hecho y lo muestra como diccionario, sin red")
     ap.add_argument(
         "--falla-si-cambio",
         action="store_true",
         help="sale 1 si una fuente se rompió o cambió de columnas",
     )
     args = ap.parse_args(argv)
+    if args.esquema:
+        print(esquema(json.loads(args.esquema.read_text(encoding="utf-8"))), end="")
+        return 0
     informe = []
     for lector in sorted(args.lectores or fuentes.FUENTES):
         try:
