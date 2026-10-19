@@ -117,6 +117,13 @@ es bajar y filtrar por código de establecimiento, no una integración nueva. **
 año alcanza para lo que el repo mide hoy. El disparador queda escrito y no es una fecha: *cuando
 exista una pregunta de precio que necesite la serie*.
 
+### 3.4 La OPP: medida y descartada
+
+19 datasets (`organization:opp`), y 18 tienen su último recurso de **2021-03-09 o antes** (2012,
+2016, 2017 y quince de 2021); el único con datos de 2024 es el de ingresos y egresos de los
+gobiernos departamentales. No es una fuente viva: es una foto del quinquenio 2015-2020. **No se
+escribe el lector**, y la tabla completa con la decisión está en `2026-10-18-opp-medicion.md`.
+
 ## 4. Una trampa documentada que hoy **no se reproduce**, y por qué importa acá
 
 Una medición del 04/10/26 encontró la **búsqueda** del catálogo rota: `package_search` devolvía
