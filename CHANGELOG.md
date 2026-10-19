@@ -2,6 +2,18 @@
 
 ## Sin publicar
 
+## 0.15.1 — 2026-10-19
+
+- **`revisiones.desde_json` no cuenta como sanas a las fuentes que no se midieron.** El primer
+  resumen del CI decía «sanas 19» con 8 fuentes que piden un parámetro: un verde inflado es peor que
+  un amarillo. Ahora sanas son las que se midieron y no cambiaron (11 de 21).
+- **El informe del CI corre aunque los tests de red fallen** (`if: always()`): la primera corrida los
+  vio salteados justo cuando más servían —el Parlamento contestaba `403` desde el runner y el informe
+  es lo que dice qué pasó—.
+- `docs/2026-10-19-informe-de-fuentes.md` §7: lo que encontró la primera corrida (Parlamento con
+  `403` desde el runner, INDEC de 117 a 65 filas, URSEA que cambia de bytes a diario), y por qué la
+  línea de base no se tocó.
+
 ## 0.15.0 — 2026-10-19
 
 - **El informe de las fuentes se compara contra una línea de base versionada.** `docs/fuentes.json`

@@ -198,3 +198,17 @@ def test_markdown_sin_cambios_lo_dice():
     texto = revisiones.markdown(r)
     assert "Sin cambios de forma." in texto
     assert "sanas 2: ancap, bcu" in texto
+
+
+def test_una_fuente_sin_medir_no_cuenta_como_sana(tmp_path):
+    """Medido el 19/10: el resumen decía «sanas 19» cuando 8 fuentes piden un parámetro y no se miden."""
+    antes = _informe(
+        tmp_path / "fuentes-2026-10-11.json",
+        [_fuente("ancap"), _fuente("ideuy", ok=False, filas=0, motivo="necesita una dirección")],
+    )
+    despues = _informe(
+        tmp_path / "fuentes-2026-10-18.json",
+        [_fuente("ancap"), _fuente("ideuy", ok=False, filas=0, motivo="necesita una dirección")],
+    )
+    r = revisiones.desde_json(antes, despues)
+    assert r["sanos"] == ["ancap"]

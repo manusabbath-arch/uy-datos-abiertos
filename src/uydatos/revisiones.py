@@ -224,7 +224,9 @@ def desde_json(antes: Path, despues: Path, *, variacion: float = 0.2, minimo: in
         "rompieron": rompieron,
         "columnas": columnas,
         "filas": filas,
-        "sanos": sorted(lector for lector in a.keys() & d.keys() if lector not in tocados),
+        # Sanas son las que se midieron y no cambiaron. Una fuente que pide un parámetro no está sana:
+        # está sin medir, y contarla infla el verde (medido el 19/10: «sanas 19» con 8 sin medir).
+        "sanos": sorted(lector for lector in a.keys() & d.keys() if d[lector]["ok"] and lector not in tocados),
     }
 
 

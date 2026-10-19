@@ -101,3 +101,16 @@ es exactamente el error que `CADENCIA` corrigió en 0.13 con INUMET. Si el cambi
 todavía, la línea de base **no se toca** y el amarillo del lunes queda ahí hasta que se entienda.
 
 El historial de cada corrida no vive en el repo: son los artifacts de Actions, 90 días.
+
+## 7. Lo que encontró la primera corrida (2026-10-19)
+
+La primera corrida del mecanismo en el CI dijo tres cosas, y ninguna es del código:
+
+| Fuente | Qué dijo el informe | Qué es |
+|---|---|---|
+| `parlamento` | rompió: `403 Forbidden` en la URL de «asuntos entrados» | El servidor del Parlamento bloquea la IP del runner: desde esta máquina la misma URL responde `200`. Es el límite del chequeo automático, no del lector. |
+| `indec` | filas 117 → 65 | La API cambió lo que devuelve: desde acá también da 65 filas, con el mismo sha256, y los períodos vienen salteados. El lector sigue leyendo; cambió el volumen. |
+| `ursea` | sano, pero 49.024.483 bytes contra 49.106.270 | El archivo cambia a diario, sin cambiar de forma. Ya está en §4. |
+
+Y la línea de base **no se tocó**: por la regla de §6, un cambio no se acepta hasta que se entiende.
+Las dos primeras quedan como preguntas abiertas, no como deuda escondida.

@@ -1,6 +1,6 @@
 [project]
 name = "uydatos"
-version = "0.15.0"
+version = "0.15.1"
 description = "Lectores estrictos de datos públicos de Uruguay y la región: BCU, ANCAP, INIA, INUMET, Salto Grande, INDEC, IBGE, IDE.uy, RUT y cédula."
 readme = "README.md"
 license = { file = "LICENSE" }
