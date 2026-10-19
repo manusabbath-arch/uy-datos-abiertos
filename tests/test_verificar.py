@@ -93,3 +93,44 @@ def test_dos_fuentes_reales_se_verifican():
         assert r["ok"] is True, (lector, r["motivo"])
         assert r["filas"] > 100
         assert r["sha256"]
+
+
+def _linea_de_base(ruta: Path, filas: int, columnas: list[str]) -> Path:
+    ruta.write_text(
+        json.dumps(
+            {
+                "fecha": "2026-10-12",
+                "fuentes": [
+                    {
+                        "lector": "ancap",
+                        "ok": True,
+                        "filas": filas,
+                        "columnas": columnas,
+                        "bytes": 1,
+                        "sha256": "x",
+                        "motivo": "",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return ruta
+
+
+def test_el_informe_se_compara_contra_la_linea_de_base(monkeypatch, tmp_path, capsys):
+    monkeypatch.setitem(verificar.VERIFICAR, "ancap", _escritor(["a"], 3))
+    base = _linea_de_base(tmp_path / "base.json", 100, ["a", "b"])
+    salida = tmp_path / "hoy.json"
+    assert verificar.main(["--salida", str(salida), "--baseline", str(base), "ancap"]) == 0
+    texto = capsys.readouterr().out
+    assert "| `ancap` | columnas | -b |" in texto
+    assert "| `ancap` | filas | 100 → 3 |" not in texto, "un cambio de columnas ya explica las filas"
+
+
+def test_falla_si_cambio_solo_cuenta_rompieron_y_columnas(monkeypatch, tmp_path):
+    monkeypatch.setitem(verificar.VERIFICAR, "ancap", _escritor(["a"], 3))
+    base = _linea_de_base(tmp_path / "base.json", 100, ["a", "b"])
+    salida = tmp_path / "hoy.json"
+    assert verificar.main(["--salida", str(salida), "--baseline", str(base), "--falla-si-cambio", "ancap"]) == 1

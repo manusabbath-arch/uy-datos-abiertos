@@ -13,7 +13,8 @@ entre semanas; la forma sí.
 
     python -m uydatos.verificar                      # las trece que se verifican sin parámetros
     python -m uydatos.verificar ancap sanciones      # solo esas
-    python -m uydatos.verificar --json datos/fuentes-2026-10-18.json
+    python -m uydatos.verificar --salida datos/fuentes-2026-10-18.json
+    python -m uydatos.verificar --salida hoy.json --baseline docs/fuentes.json --falla-si-cambio
 """
 
 from __future__ import annotations
@@ -41,6 +42,7 @@ from uydatos import (
     inumet,
     limites,
     parlamento,
+    revisiones,
     sanciones,
     ursea,
 )
@@ -240,8 +242,20 @@ def _en(lector: str, directorio: Path, base: dict) -> dict:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m uydatos.verificar", description=__doc__.splitlines()[0])
     ap.add_argument("lectores", nargs="*", help="por defecto, todas las del manifiesto")
-    ap.add_argument("--json", type=Path, help="deja el informe en un archivo, para comparar semanas")
+    ap.add_argument(
+        "--salida",
+        "--json",
+        dest="salida",
+        type=Path,
+        help="deja el informe en este archivo, para comparar semanas (`--json` es el nombre viejo)",
+    )
     ap.add_argument("--destino", type=Path, help="deja los archivos bajados en este directorio")
+    ap.add_argument("--baseline", type=Path, help="compara contra este informe y escribe qué cambió")
+    ap.add_argument(
+        "--falla-si-cambio",
+        action="store_true",
+        help="sale 1 si una fuente se rompió o cambió de columnas",
+    )
     args = ap.parse_args(argv)
     informe = []
     for lector in sorted(args.lectores or fuentes.FUENTES):
@@ -258,12 +272,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         else:
             detalle = r["motivo"]
         print(f"{lector:<14} {'ok' if r['ok'] else '--':<3} {detalle}")
-    if args.json:
-        args.json.parent.mkdir(parents=True, exist_ok=True)
+    if args.salida:
+        args.salida.parent.mkdir(parents=True, exist_ok=True)
         cuerpo = {"fecha": date.today().isoformat(), "fuentes": informe}
-        args.json.write_text(json.dumps(cuerpo, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        args.salida.write_text(json.dumps(cuerpo, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     fallaron = [r["lector"] for r in informe if not r["ok"] and r["lector"] in VERIFICAR]
-    return 1 if fallaron else 0
+    cambio = False
+    if args.baseline:
+        if not args.salida:
+            print("--baseline necesita --salida: sin el informe de hoy no hay nada que comparar")
+            return 2
+        comparacion = revisiones.desde_json(args.baseline, args.salida)
+        print(revisiones.markdown(comparacion), end="")
+        cambio = bool(comparacion["rompieron"] or comparacion["columnas"])
+    return 1 if fallaron or (args.falla_si_cambio and cambio) else 0
 
 
 if __name__ == "__main__":
