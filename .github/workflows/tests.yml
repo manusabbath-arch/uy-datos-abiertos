@@ -46,8 +46,22 @@ jobs:
         # el 17/10 con las sanciones del DSS): `movido` significa «volver a medir».
         continue-on-error: true
         run: uv run --python 3.13 --with-editable . python -m uydatos.fuentes estado >> "$GITHUB_STEP_SUMMARY"
-      - name: El contrato de forma
-        # continue-on-error: un informe semanal que rompe el trabajo por una fuente caída deja de
-        # ser un informe. El resumen dice cuál; la corrida de tests ya dijo si el paquete está roto.
+      - name: El contrato de forma, contra la línea de base
+        # continue-on-error: un informe semanal que rompe el trabajo por una fuente caída deja de ser
+        # un informe. El resumen dice cuál; la corrida de tests ya dijo si el paquete está roto.
         continue-on-error: true
-        run: uv run --python 3.13 --with-editable . python -m uydatos.verificar >> "$GITHUB_STEP_SUMMARY"
+        env:
+          INFORME: informes/fuentes-${{ github.run_id }}.json
+        run: |
+          set -o pipefail
+          mkdir -p informes
+          uv run --python 3.13 --with-editable . python -m uydatos.verificar \
+            --salida "$INFORME" --destino "$RUNNER_TEMP/fuentes" \
+            --baseline docs/fuentes.json --falla-si-cambio | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Guardar el informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contrato-de-fuentes-${{ github.run_id }}
+          path: informes/*.json
+          retention-days: 90
