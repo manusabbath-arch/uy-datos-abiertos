@@ -14,6 +14,7 @@ su fecha no se cita.
 | `2026-10-17-oportunidades.md` | qué se toma de los proyectos y la literatura externa, y qué datos de Uruguay queda por leer, con las mediciones del catálogo del 17/10 |
 | `2026-10-17-mapa-del-catalogo.md` | el catálogo por sus dos endpoints (2.777 contra 2.716), qué son los 61 que el buscador no ve, y el histograma de formatos |
 | `2026-10-18-opp-medicion.md` | los 19 datasets de la OPP: 18 congelados desde 2021 o antes, y la decisión de no escribir el lector |
+| `2026-10-19-informe-de-fuentes.md` | qué compara el informe semanal, qué no mide, y cómo se actualiza la línea de base |
 
 ## El metodo
 

@@ -2,6 +2,25 @@
 
 ## Sin publicar
 
+## 0.15.0 — 2026-10-19
+
+- **El informe de las fuentes se compara contra una línea de base versionada.** `docs/fuentes.json`
+  es el informe aceptado de las 21 fuentes (13 medidas, 8 con su motivo); `--baseline` compara la
+  corrida de hoy contra ese archivo, `revisiones.markdown()` lo escribe como tabla y
+  `--falla-si-cambio` sale 1 cuando una fuente se rompió o cambió de columnas. El CI semanal sube el
+  informe como artifact de 90 días y escribe el diff en el resumen: antes la tabla del lunes se
+  miraba y se olvidaba, porque no tenía contra qué compararse.
+- **`--esquema`**: el diccionario observado (columnas por fuente, con la fecha del informe) se lee
+  sin red desde el mismo JSON. No declara tipos: `hojas` es el único lector que los conoce.
+- **`--json` pasa a llamarse `--salida`** (sigue andando como alias). El sha256 se informa pero no se
+  usa como fallo: medido hoy que `ursea` da 49.106.270 bytes y otro sha en dos corridas de cuatro
+  minutos aparte, y `limites` hace lo mismo con el WFS.
+- **Los motivos de las 8 pendientes se leen como frases**: decían «requiere no lee una fuente…»,
+  porque el prefijo «requiere» se pegaba a un texto que ya era una oración.
+- Lo que el informe **no** mide, escrito para no prometerlo (`docs/2026-10-19-informe-de-fuentes.md`):
+  distribución (nulos, rangos por columna) y linaje. Sí mide volumen, esquema y la fecha que declara
+  el catálogo.
+
 ## 0.14.0 — 2026-10-19
 
 - **Nuevo: `uydatos.verificar`**, el contrato de forma de las fuentes. Baja cada fuente, la lee

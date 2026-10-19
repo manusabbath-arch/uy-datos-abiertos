@@ -130,6 +130,8 @@ Y una vez por semana, el lunes:
 ```sh
 python -m uydatos.fuentes estado   # qué fuente del catálogo se movió desde la última medición
 python -m uydatos.verificar        # qué fuente dejó de leerse, o cambió de columnas
+python -m uydatos.verificar --salida hoy.json --baseline docs/fuentes.json   # qué cambió desde la línea de base
+python -m uydatos.verificar --esquema docs/fuentes.json                     # el diccionario, sin red
 python -m uydatos.revisiones desde-json datos/   # qué cambió entre el informe anterior y este
 ```
 
