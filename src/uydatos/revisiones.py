@@ -228,6 +228,38 @@ def desde_json(antes: Path, despues: Path, *, variacion: float = 0.2, minimo: in
     }
 
 
+def markdown(comparacion: dict, titulo: str = "") -> str:
+    """La comparación como tabla, para el resumen del CI o para un documento.
+
+    Las fuentes sanas se cuentan, no se listan: trece filas verdes esconden la que importa. Y un
+    informe sin cambios lo dice con una frase, porque un texto vacío no se distingue de uno que no
+    se pudo hacer.
+    """
+    lineas = [f"## {titulo}", ""] if titulo else []
+    filas = []
+    for r in comparacion["rompieron"]:
+        filas.append((r["lector"], "rompió", r["motivo"]))
+    for c in comparacion["columnas"]:
+        # Las que se fueron primero: se lee como un diff.
+        partes = [f"-{x}" for x in c["idas"]] + [f"+{x}" for x in c["nuevas"]]
+        filas.append((c["lector"], "columnas", " ".join(partes)))
+    for f in comparacion["filas"]:
+        filas.append((f["lector"], "filas", f"{f['antes']} → {f['despues']}"))
+    for lector in comparacion["aparecen"]:
+        filas.append((lector, "aparece", ""))
+    for lector in comparacion["desaparecen"]:
+        filas.append((lector, "desaparece", ""))
+    if filas:
+        lineas += ["| fuente | qué pasó | detalle |", "|---|---|---|"]
+        lineas += [f"| `{a}` | {b} | {c} |" for a, b, c in filas]
+        lineas.append("")
+    else:
+        lineas += ["Sin cambios de forma.", ""]
+    # Ordenadas acá y no confiando en el llamador: la tabla no cambia porque cambie el orden del dict.
+    lineas.append(f"sanas {len(comparacion['sanos'])}: {', '.join(sorted(comparacion['sanos'])) or 'ninguna'}")
+    return "\n".join(lineas) + "\n"
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m uydatos.revisiones", description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="orden", required=True)

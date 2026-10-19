@@ -172,3 +172,29 @@ def test_desde_json_avisa_una_caida_de_filas_y_lo_que_aparece(tmp_path):
     r = revisiones.desde_json(antes, despues)
     assert r["filas"] == [{"lector": "inia", "antes": 1000, "despues": 12}]
     assert r["aparecen"] == ["sanciones"]
+
+
+def test_markdown_dice_lo_que_cambio_y_cuenta_las_sanas():
+    r = {
+        "rompieron": [{"lector": "ancap", "motivo": "DatosInvalidos: faltan columnas"}],
+        "columnas": [{"lector": "inumet", "nuevas": ["c"], "idas": ["b"]}],
+        "filas": [{"lector": "inia", "antes": 1000, "despues": 12}],
+        "aparecen": ["sanciones"],
+        "desaparecen": [],
+        "sanos": ["bcu"],
+    }
+    texto = revisiones.markdown(r, titulo="2026-10-19")
+    assert texto.startswith("## 2026-10-19")
+    assert "| `ancap` | rompió | DatosInvalidos: faltan columnas |" in texto
+    assert "| `inumet` | columnas | -b +c |" in texto
+    assert "| `inia` | filas | 1000 → 12 |" in texto
+    assert "| `sanciones` | aparece |  |" in texto
+    assert "sanas 1: bcu" in texto
+
+
+def test_markdown_sin_cambios_lo_dice():
+    """Un informe sin cambios no puede parecer un informe que no se hizo."""
+    r = {"rompieron": [], "columnas": [], "filas": [], "aparecen": [], "desaparecen": [], "sanos": ["bcu", "ancap"]}
+    texto = revisiones.markdown(r)
+    assert "Sin cambios de forma." in texto
+    assert "sanas 2: ancap, bcu" in texto
