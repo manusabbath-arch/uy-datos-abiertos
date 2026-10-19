@@ -44,11 +44,15 @@ jobs:
         # continue-on-error: si el catálogo no contesta, el trabajo igual publica el resultado de los
         # tests, que es la información principal. Una fecha del catálogo no es una revisión (medido
         # el 17/10 con las sanciones del DSS): `movido` significa «volver a medir».
+        # if: always() porque un rojo en los tests de red no puede llevarse puesto el informe: son
+        # datos distintos y el del contrato sirve justamente cuando algo se cayó.
+        if: always()
         continue-on-error: true
         run: uv run --python 3.13 --with-editable . python -m uydatos.fuentes estado >> "$GITHUB_STEP_SUMMARY"
       - name: El contrato de forma, contra la línea de base
         # continue-on-error: un informe semanal que rompe el trabajo por una fuente caída deja de ser
         # un informe. El resumen dice cuál; la corrida de tests ya dijo si el paquete está roto.
+        if: always()
         continue-on-error: true
         env:
           INFORME: informes/fuentes-${{ github.run_id }}.json
