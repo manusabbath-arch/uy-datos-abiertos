@@ -46,3 +46,8 @@ jobs:
         # el 17/10 con las sanciones del DSS): `movido` significa «volver a medir».
         continue-on-error: true
         run: uv run --python 3.13 --with-editable . python -m uydatos.fuentes estado >> "$GITHUB_STEP_SUMMARY"
+      - name: El contrato de forma
+        # continue-on-error: un informe semanal que rompe el trabajo por una fuente caída deja de
+        # ser un informe. El resumen dice cuál; la corrida de tests ya dijo si el paquete está roto.
+        continue-on-error: true
+        run: uv run --python 3.13 --with-editable . python -m uydatos.verificar >> "$GITHUB_STEP_SUMMARY"
