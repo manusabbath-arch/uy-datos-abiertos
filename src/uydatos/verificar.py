@@ -294,7 +294,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.salida:
         args.salida.parent.mkdir(parents=True, exist_ok=True)
         cuerpo = {"fecha": date.today().isoformat(), "fuentes": informe}
-        args.salida.write_text(json.dumps(cuerpo, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        args.salida.write_text(json.dumps(cuerpo, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     fallaron = [r["lector"] for r in informe if not r["ok"] and r["lector"] in VERIFICAR]
     cambio = False
     if args.baseline:
