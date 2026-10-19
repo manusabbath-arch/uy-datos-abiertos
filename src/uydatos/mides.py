@@ -46,6 +46,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import catalogo, procedencia, red
+from uydatos.errores import DatosInvalidos
 
 PREFIJO = "mides-indicador-"
 ORGANIZACION = "mides"
@@ -59,7 +60,7 @@ ANIO_MINIMO = 1900
 ANIO_MAXIMO = 2100
 
 
-class MidesInvalido(ValueError):
+class MidesInvalido(DatosInvalidos):
     """El archivo o el indicador no tienen la forma que declara la familia."""
 
 

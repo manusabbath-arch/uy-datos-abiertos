@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 ID_NACIONAL_VIVA = "148.3_INIVELNAL_DICI_M_26"
 ID_GBA = "148.3_INIVELGBADICI_M_26"
@@ -38,7 +39,7 @@ URL = "https://apis.datos.gob.ar/series/api/series/"
 BASES_MUERTAS = ("DICI_M_48", "DICI_M_03", "DICI_M_38")
 
 
-class IpcInvalido(ValueError):
+class IpcInvalido(DatosInvalidos):
     """El archivo no cumple el contrato de la fuente."""
 
 

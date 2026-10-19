@@ -53,6 +53,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 WS = "https://www.saltogrande.org/ws.php"
 NS = "https://www.saltogrande.org/ws.php"
@@ -64,7 +65,7 @@ MAX_DIAS_POR_CONSULTA = 31
 VARIABLES = ("P", "H", "Q")
 
 
-class SaltoGrandeInvalido(ValueError):
+class SaltoGrandeInvalido(DatosInvalidos):
     """La respuesta no cumple el contrato del web service."""
 
 

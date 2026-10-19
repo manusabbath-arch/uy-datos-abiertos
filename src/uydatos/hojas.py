@@ -36,6 +36,7 @@ from types import ModuleType
 from typing import Optional, Sequence
 
 from uydatos import procedencia
+from uydatos.errores import DatosInvalidos
 
 # Los primeros bytes deciden el motor. El `formato` que declara el catálogo miente 23 de 24 veces y
 # openpyxl se fía de la extensión: lo único que no se puede declarar mal es el contenido.
@@ -48,7 +49,7 @@ FIRMAS = {
 MOTORES = {"xlsx": ("openpyxl", "un XLSX"), "xls": ("xlrd", "un .xls de verdad")}
 
 
-class HojasInvalido(ValueError):
+class HojasInvalido(DatosInvalidos):
     """El archivo no es una planilla legible, o falta la dependencia opcional que la lee."""
 
 

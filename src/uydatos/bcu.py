@@ -41,6 +41,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 URL = "https://cotizaciones.bcu.gub.uy/wscotizaciones/servlet/awsbcucotizaciones"
 
@@ -59,7 +60,7 @@ MAX_DIAS_ATRAS = 7
 _NS = "{Cotiza}"
 
 
-class BcuInvalido(ValueError):
+class BcuInvalido(DatosInvalidos):
     """El archivo no cumple el contrato de la fuente."""
 
 

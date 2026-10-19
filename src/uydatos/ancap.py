@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 DATASET = "ancap-precio-combustible-pe"
 # La URL de respaldo, por si el catálogo no responde. **El id del recurso cambia cada vez que ANCAP
@@ -48,7 +49,7 @@ COLUMNAS_ESPERADAS = ["Año", "Mes", "Producto", "Unidad", "Valor"]
 SIN_COTIZACION = "S/C"
 
 
-class AncapInvalido(ValueError):
+class AncapInvalido(DatosInvalidos):
     """La serie no cumple el contrato de la fuente."""
 
 

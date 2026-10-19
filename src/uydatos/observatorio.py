@@ -65,6 +65,7 @@ import unicodedata
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 BASE = "https://www.gub.uy/ministerio-desarrollo-social"
 SITEMAP = f"{BASE}/sitemap.xml"
@@ -80,7 +81,7 @@ CAMPOS_FICHA = {
 _NUMERO = re.compile(r"-?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d+)?")
 
 
-class ObservatorioInvalido(ValueError):
+class ObservatorioInvalido(DatosInvalidos):
     """La página no tiene la forma que se midió, o el indicador no existe."""
 
 

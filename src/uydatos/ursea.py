@@ -64,6 +64,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 # clave -> (dataset del catálogo, nombre del archivo CSV dentro del dataset). La URL se resuelve
 # por el catálogo al bajar: el dataset del PPI tiene seis recursos de tres modelos distintos, y el
@@ -104,7 +105,7 @@ COLUMNAS_EX_PLANTA = ["Año-Mes", "Producto", "Unidad", "PrecioExPlantaUYU"]
 TOLERANCIA_TOTAL = 0.02
 
 
-class UrseaInvalido(ValueError):
+class UrseaInvalido(DatosInvalidos):
     """El archivo no cumple el contrato medido."""
 
 

@@ -80,6 +80,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import catalogo, red
+from uydatos.errores import DatosInvalidos
 
 DATASETS = {
     "asistencias-senado": "parlamento-del-uruguay-asistencias-a-la-camara-de-senadores",
@@ -110,7 +111,7 @@ _CARPETA = re.compile(r"([A-Z.]+)\s*:\s*(\d+)\s*/\s*(\d{4})")
 _TIPO = re.compile(r"\s*\(([^()]*)\)\s*$")
 
 
-class ParlamentoInvalido(ValueError):
+class ParlamentoInvalido(DatosInvalidos):
     """El archivo no cumple el contrato del Parlamento."""
 
 

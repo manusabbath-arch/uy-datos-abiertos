@@ -56,6 +56,7 @@ from pathlib import Path
 from typing import Callable, Optional, Sequence
 
 from uydatos import catalogo, red
+from uydatos.errores import DatosInvalidos
 
 DATASET = "arce-datos-historicos-de-compras"
 _ADJUDICACIONES = re.compile(r"^a-(\d{2})-(\d{4})\.json$")
@@ -73,7 +74,7 @@ BCU_POR_MONEDA = {
 }
 
 
-class ComprasInvalido(ValueError):
+class ComprasInvalido(DatosInvalidos):
     """El archivo no cumple el contrato de la ARCE."""
 
 

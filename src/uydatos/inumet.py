@@ -51,6 +51,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional, Sequence
 
+from uydatos.errores import DatosInvalidos
+
 # Nombre corto -> (dataset del catálogo, columnas de valor medidas en el encabezado, si es horaria)
 DATASETS: dict[str, tuple[str, tuple[str, ...], bool]] = {
     "temperatura": (
@@ -134,7 +136,7 @@ _ARCHIVO = re.compile(r"^inumet_[a-z_]+\.csv$")
 _RE_FECHA = re.compile(r"^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$")
 
 
-class InumetInvalido(ValueError):
+class InumetInvalido(DatosInvalidos):
     """La observación no cumple el contrato de la fuente."""
 
 

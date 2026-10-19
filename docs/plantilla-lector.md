@@ -47,6 +47,8 @@ Cada una con el numero que la prueba:
   (de -30 a 50 grados para temperatura en Uruguay).
 - Las columnas que se dejan **sin** rango, y por que.
 - Que hace el lector con una fila fuera de contrato: levanta, con el motivo.
+- La clase del rechazo hereda de `uydatos.errores.DatosInvalidos`, con el nombre del dominio
+  (`InumetInvalido`) y la base común: un consumidor atrapa todas con un tipo.
 
 La regla de fondo: **rechazar el archivo entero solo cuando el defecto cambia el dominio del dato**
 (una estacion nueva, una columna mas); saltear y contar lo que no es un dato.

@@ -44,6 +44,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 _WFS = "service=WFS&version=1.0.0&request=GetFeature&outputFormat=application/json&srsName=EPSG:4326"
 
@@ -75,7 +76,7 @@ _LAT = (-36.0, -29.5)
 _LON = (-59.0, -52.5)
 
 
-class LimitesInvalido(ValueError):
+class LimitesInvalido(DatosInvalidos):
     """La capa no cumple el contrato de la fuente."""
 
 

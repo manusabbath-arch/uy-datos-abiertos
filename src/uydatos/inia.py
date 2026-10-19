@@ -36,6 +36,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional, Sequence
 
+from uydatos.errores import DatosInvalidos
+
 DATASET = "inia-precipitacion-temps-extremas-sg"
 
 COLUMNAS = ["fecha", "temperaturaMaxima", "temperaturaMinima", "pluviometro"]
@@ -51,7 +53,7 @@ LLUVIA_MAXIMA = 500.0
 _NOMBRE = re.compile(r"^ppt_tmax_tmin_sg_(\d{4})\.csv$")
 
 
-class ClimaInvalido(ValueError):
+class ClimaInvalido(DatosInvalidos):
     """La serie no cumple el contrato de la fuente."""
 
 

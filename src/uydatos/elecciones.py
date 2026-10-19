@@ -47,6 +47,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import catalogo, red
+from uydatos.errores import DatosInvalidos
 
 ELECCIONES: dict[str, dict] = {
     "nacionales-2024": {
@@ -112,7 +113,7 @@ _FIJAS_TOTALES = {
 _NUMERICAS = ("habilitados", "emitidos", "no_observados", "observados", "anulados", "en_blanco")
 
 
-class EleccionesInvalido(ValueError):
+class EleccionesInvalido(DatosInvalidos):
     """El archivo no cumple el contrato de la Corte Electoral."""
 
 

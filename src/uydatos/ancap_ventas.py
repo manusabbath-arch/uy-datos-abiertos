@@ -41,6 +41,7 @@ from typing import Optional, Sequence
 
 from uydatos import red
 from uydatos.ancap import numero_europeo
+from uydatos.errores import DatosInvalidos
 
 DATASET = "ancap-cantidad-ventas-combustibles"
 # URL de respaldo, por si el catálogo no responde. **El id del recurso cambia cuando ANCAP republica**
@@ -65,7 +66,7 @@ UNIDADES_MEDIDAS = ("Miles de m3", "Toneladas")
 UNIDAD_POR_DEFECTO = "Miles de m3"
 
 
-class AncapVentasInvalido(ValueError):
+class AncapVentasInvalido(DatosInvalidos):
     """La serie no cumple el contrato de la fuente."""
 
 

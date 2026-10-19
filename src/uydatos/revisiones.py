@@ -16,8 +16,10 @@ import csv
 from pathlib import Path
 from typing import Sequence
 
+from uydatos.errores import DatosInvalidos
 
-class RevisionInvalida(ValueError):
+
+class RevisionInvalida(DatosInvalidos):
     """Las dos copias no se pueden comparar con la clave pedida."""
 
 

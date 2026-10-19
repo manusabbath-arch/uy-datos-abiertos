@@ -46,6 +46,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import catalogo, red
+from uydatos.errores import DatosInvalidos
 
 DATASET = "defensa-del-consumidor-sanciones-a-empresas"
 COLUMNAS = [
@@ -62,7 +63,7 @@ CODIFICACION = "cp1252"
 DELIMITADOR = ";"
 
 
-class SancionesInvalido(ValueError):
+class SancionesInvalido(DatosInvalidos):
     """El archivo no cumple el contrato de la fuente."""
 
 

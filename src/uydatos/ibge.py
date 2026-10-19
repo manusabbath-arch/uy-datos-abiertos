@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 URL = "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/all"
 VARIABLE = "2266"
@@ -32,7 +33,7 @@ UNIDAD = "Número-índice"
 SIN_DATO = ("...", "-", "..", "X", "")
 
 
-class IpcaInvalido(ValueError):
+class IpcaInvalido(DatosInvalidos):
     """La respuesta de SIDRA no cumple el contrato de la fuente."""
 
 

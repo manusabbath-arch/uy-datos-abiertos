@@ -16,11 +16,12 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 from uydatos import red
+from uydatos.errores import DatosInvalidos
 
 API = "https://catalogodatos.gub.uy/api/3/action/package_show"
 
 
-class CatalogoInvalido(ValueError):
+class CatalogoInvalido(DatosInvalidos):
     """La respuesta del catálogo no cumple el contrato de CKAN."""
 
 
