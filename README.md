@@ -130,6 +130,7 @@ Y una vez por semana, el lunes:
 ```sh
 python -m uydatos.fuentes estado   # qué fuente del catálogo se movió desde la última medición
 python -m uydatos.verificar        # qué fuente dejó de leerse, o cambió de columnas
+python -m uydatos.revisiones desde-json datos/   # qué cambió entre el informe anterior y este
 ```
 
 `estado` pregunta la fecha del recurso que cada lector usa, no la de una URL recordada: `movido`

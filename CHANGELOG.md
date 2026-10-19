@@ -2,6 +2,37 @@
 
 ## Sin publicar
 
+## 0.14.0 — 2026-10-19
+
+- **Nuevo: `uydatos.verificar`**, el contrato de forma de las fuentes. Baja cada fuente, la lee
+  entera con su propio lector y reporta filas, columnas, bytes y sha256; `--json` deja un informe
+  comparable semana a semana. Trece fuentes se verifican sin parámetros (ANCAP, ventas, BCU, compras,
+  elecciones, IBGE, INDEC, INIA, INUMET, límites, Parlamento, sanciones, URSEA) y ocho declaran qué
+  parámetro les falta, con el motivo escrito: `ideuy` una dirección, `mides` un indicador,
+  `observatorio` un slug, `salto_grande` una estación, `hojas` un archivo, `catalogo`/`rut`/`semanas`
+  no leen una fuente. Un lector nuevo sin adaptador ni motivo se cae en el test, igual que en el
+  manifiesto. Medido el 19/10: la corrida completa de las trece tarda más de siete minutos (INIA
+  son 57 CSV y compras un ZIP), así que es un trabajo del lunes, no de cada commit.
+- **Nuevo: `uydatos.revisiones.revisadas`**, la pregunta que faltaba: **qué filas que ya estaban
+  cambiaron de valor**. Un archivo que crece se nota; uno que se reprocesa reescribe el pasado y el
+  total no cambia. `desde_json` compara dos informes de `verificar` y dice qué fuente se rompió, cuál
+  cambió de columnas y cuál cambió de tamaño (con umbral: `max(10 filas, 20%)`), y
+  `python -m uydatos.revisiones desde-json datos/` compara los dos últimos informes de un directorio.
+- **Nuevo: `uydatos.errores.DatosInvalidos`**, la base de los diecinueve rechazos del paquete: un
+  consumidor atrapa el de cualquier fuente con un solo `except`, en vez de importar diecinueve
+  clases. Sigue siendo `ValueError`, así que el código escrito contra la 0.13.0 no cambia.
+- **Corregido: un RUT real estaba versionado.** El barrido de `git ls-files` con el validador del
+  propio paquete encontró seis RUT con dígito verificador válido en archivos versionados; uno era el
+  de una empresa sancionada, copiado del archivo del DSS a un doc y a una fixture. Se reemplazó por
+  uno sintético y `tests/test_privacidad.py` ahora falla si vuelve a entrar uno, con una lista corta
+  y explícita de los inventados —y sin publicar el número en el mensaje, que la guarda tampoco puede
+  publicar lo que protege.
+- `docs/2026-10-18-opp-medicion.md`: la OPP son 19 datasets y 18 tienen su último recurso de 2021 o
+  antes (2012, 2016, 2017 y quince de 2021); queda escrita la decisión de no escribir el lector.
+  Medido también que tres fichas declaran `metadata_modified` de 2022 con recursos de 2021.
+- Link rot: medido, no es un problema de este catálogo (44 de 45 recursos responden `200` en dos
+  muestras); no se agregó el censo.
+
 ## 0.13.0 — 2026-10-17
 
 - **Nuevo: `uydatos.sanciones`**, las sanciones aplicadas a empresas por Defensa del Consumidor:

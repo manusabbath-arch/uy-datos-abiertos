@@ -30,8 +30,10 @@ Módulos:
 - `sanciones`    — sanciones a empresas de Defensa del Consumidor, con su límite de datos personales.
 - `fuentes`      — el manifiesto de las fuentes y si alguna se movió desde la última medición.
 - `revisiones`   — qué cambió entre dos copias de una fuente, y si el cambio es de dominio.
+- `verificar`    — el contrato de forma de las fuentes: filas, columnas y sha256, semana a semana.
+- `errores`      — la base común de los rechazos: `DatosInvalidos`, que atrapa a los diecinueve.
 """
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"
