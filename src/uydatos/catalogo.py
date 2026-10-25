@@ -207,8 +207,9 @@ def buscar(
     return parsear_busqueda(accion("package_search", **parametros))
 
 
-def datastore_search(recurso: str, *, limite: int = 100, desde: int = 0, base: str = ACCIONES,
-                     filtros: Optional[dict[str, str]] = None) -> dict:
+def datastore_search(
+    recurso: str, *, limite: int = 100, desde: int = 0, base: str = ACCIONES, filtros: Optional[dict[str, str]] = None
+) -> dict:
     """Consulta las filas de un recurso ya cargado en el datastore de CKAN. **Sale a la red.**
 
     Medido el 2026-10-09 sobre el recurso de temperatura de INUMET (`f800fc53...`): `total`
@@ -221,8 +222,14 @@ def datastore_search(recurso: str, *, limite: int = 100, desde: int = 0, base: s
     `{"ANIO": 2025}` con un entero devuelve **HTTP 409**; con `"2025"` anda (medido el 2026-10-25).
     """
     extra = {"filters": json.dumps(filtros)} if filtros else {}
-    r = accion("datastore_search", base=base, resource_id=recurso,
-               limit=max(1, min(limite, 1000)), offset=max(0, desde), **extra)
+    r = accion(
+        "datastore_search",
+        base=base,
+        resource_id=recurso,
+        limit=max(1, min(limite, 1000)),
+        offset=max(0, desde),
+        **extra,
+    )
     return {
         "total": r["total"],
         "campos": [f["id"] for f in r.get("fields", [])],

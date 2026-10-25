@@ -12,6 +12,7 @@ from uydatos.ose import OseInvalido
 
 ENCABEZADO = "ANIO;TRIMESTRE;DEPARTAMENTO;LOCALIDAD;LABORATORIO;AREA_ANALISIS;PARAMETRO;METODO;ID_MUESTRA_M;VALOR"
 
+
 # Una fila de cada forma medida en el archivo real: coma, punto (Montevideo), censura a izquierda,
 # censura con el signo al revés, las tres categorías de bacteriología y la misma muestra en dos
 # laboratorios.
