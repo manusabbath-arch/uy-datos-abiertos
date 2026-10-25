@@ -28,7 +28,7 @@ class CatalogoInvalido(DatosInvalidos):
 ACCIONES = "https://catalogodatos.gub.uy/api/3/action/"
 
 
-def accion(nombre: str, **parametros) -> dict:
+def accion(nombre: str, *, base: str = ACCIONES, **parametros) -> dict:
     """Llama una accion de la API de CKAN y devuelve `result`, o levanta si `success` es falso.
 
         accion("package_show", id="inia-precipitacion-temps-extremas-sg")
@@ -36,10 +36,15 @@ def accion(nombre: str, **parametros) -> dict:
     **Sale a la red.** El `User-Agent` y los reintentos los pone `uydatos.red`. Se le pasan los
     parametros tal como los espera CKAN (`q`, `fq`, `rows`, `facet.field`, ...) en vez de armar la
     consulta a mano: la sintaxis de `q` es una trampa medida (ver `buscar()`).
+
+    `base` es la raiz de acciones de un CKAN, con la barra final. El catalogo nacional no es el
+    unico: OSE publica el suyo en `https://datos.ose.com.uy/api/3/action/` con 28 datasets que no
+    estan en catalogodatos.gub.uy (medido el 2026-10-25). El parametro es keyword-only para que no
+    choque con los de CKAN, que van por `**parametros`.
     """
     import urllib.parse
 
-    url = f"{ACCIONES}{nombre}?{urllib.parse.urlencode(parametros)}"
+    url = f"{base}{nombre}?{urllib.parse.urlencode(parametros)}"
     crudo = json.loads(red.pedir(url).decode("utf-8"))
     if not crudo.get("success"):
         raise CatalogoInvalido(
@@ -202,15 +207,22 @@ def buscar(
     return parsear_busqueda(accion("package_search", **parametros))
 
 
-def datastore_search(recurso: str, *, limite: int = 100, desde: int = 0) -> dict:
+def datastore_search(recurso: str, *, limite: int = 100, desde: int = 0, base: str = ACCIONES,
+                     filtros: Optional[dict[str, str]] = None) -> dict:
     """Consulta las filas de un recurso ya cargado en el datastore de CKAN. **Sale a la red.**
 
     Medido el 2026-10-09 sobre el recurso de temperatura de INUMET (`f800fc53...`): `total`
     332.071 y campos `_id`, `fecha`, `estacion_id`, `temp_aire`. **Todos los campos vuelven como
     texto** y `total` incluye la fila del encabezado: quien los use tiene que convertir y
     descontar. No todos los recursos estan cargados en el datastore.
+
+    `filtros` es el `filters` de CKAN: columna -> valor exacto. **Los valores van como texto**,
+    siempre: en el CKAN de OSE los campos estan tipados `text` incluso cuando son años, y filtrar
+    `{"ANIO": 2025}` con un entero devuelve **HTTP 409**; con `"2025"` anda (medido el 2026-10-25).
     """
-    r = accion("datastore_search", resource_id=recurso, limit=max(1, min(limite, 1000)), offset=max(0, desde))
+    extra = {"filters": json.dumps(filtros)} if filtros else {}
+    r = accion("datastore_search", base=base, resource_id=recurso,
+               limit=max(1, min(limite, 1000)), offset=max(0, desde), **extra)
     return {
         "total": r["total"],
         "campos": [f["id"] for f in r.get("fields", [])],
@@ -237,9 +249,14 @@ def parsear_package_show(crudo: dict) -> list[dict]:
     ]
 
 
-def recursos(dataset: str) -> list[dict]:
-    """Los recursos vigentes de un dataset. **Sale a la red.**"""
-    url = f"{API}?{red.codificar({'id': dataset})}"
+def recursos(dataset: str, *, base: str = ACCIONES) -> list[dict]:
+    """Los recursos vigentes de un dataset. **Sale a la red.**
+
+    `base` permite apuntar a otro CKAN (ver `accion()`). Quien necesite el `size` o el `hash` que
+    declara CKAN por recurso —para no bajar un archivo que no cambió— los tiene en el `result`
+    crudo de `accion("package_show", ...)`: acá se devuelven solo los cuatro campos del contrato.
+    """
+    url = f"{base}package_show?{red.codificar({'id': dataset})}"
     return parsear_package_show(json.loads(red.pedir(url).decode("utf-8")))
 
 

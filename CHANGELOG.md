@@ -2,6 +2,38 @@
 
 ## Sin publicar
 
+## 0.16.0 — 2026-10-25
+
+- **`uydatos.ose`: calidad del agua potable de OSE**, de su propio CKAN (`datos.ose.com.uy`, 28
+  datasets que no están en catalogodatos.gub.uy). 36 trimestres completos de 2017-T1 a 2025-T4:
+  152.967 análisis de bacteriología y 531.679 de fisicoquímico, en 38 y 41 localidades.
+- **Las trampas que hacen que el archivo valga la pena**, todas medidas el 2026-10-25:
+  - El separador decimal **se parte por localidad**, no por año: de los 35.070 valores de pH con
+    punto, 35.062 son de Montevideo. Un lector con un solo separador pierde el 26% de las lecturas
+    de pH del país sin dar error.
+  - El 93,7% de los valores de color verdadero (124.424 de 132.745) son límites de detección
+    (`<5`, `<2,5`): `valor` y `condicion` van en campos separados y nunca se mezclan.
+  - **Cuatro filas en 531.679 traen el signo al revés** (`>0,2`, `>5`): el mismo número que el
+    límite de detección de su columna, casi seguro un error de carga. Se devuelven como
+    `mayor_que`; el lector no los da vuelta. Esta trampa no se midió a mano: la encontró el propio
+    lector al rechazar la fila 55.440.
+  - El pH llega a **251,0** en una escala de 0 a 14, y es **una sola fila** (2017-T2, Melo); el
+    siguiente valor más alto es 10,5. Por eso la columna queda **sin rango** y los extremos se
+    declaran en `resumen()`: un rango 0-14 habría rechazado 531.679 filas por una.
+  - La bacteriología es categórica (`Ausencia` 151.980, `Presencia` 985) y aun así trae `<1` **dos
+    veces**, las dos en Laguna del Cisne y las dos en 2020.
+  - 1.773 y 3.161 muestras aparecen con **más de un laboratorio**: contar filas sobrecuenta
+    muestras (76.784 y 133.598 reales).
+  - El nombre del recurso lleva el rango de fechas adentro y cambia cada año: se elige por el
+    nombre del archivo y **por prefijo**, porque el de metadatos contiene los dos nombres.
+- **`catalogo.accion()`, `catalogo.recursos()` y `catalogo.datastore_search()` aceptan `base`**: el
+  catálogo nacional dejó de ser el único CKAN del paquete. `datastore_search()` además acepta
+  `filtros`, con la trampa documentada: los campos vienen tipados `text` y filtrar `{"ANIO": 2025}`
+  con un entero devuelve **HTTP 409**.
+- `ose` queda en `verificar.PENDIENTES` a propósito: bajar 122 MB cada semana contra un dataset que
+  se actualiza una vez al año es desperdicio que paga la fuente, y la señal de cambio sale gratis de
+  `ose.recursos_vigentes()` y `ose.hace_falta_bajar()`.
+
 ## 0.15.1 — 2026-10-19
 
 - **`revisiones.desde_json` no cuenta como sanas a las fuentes que no se midieron.** El primer
