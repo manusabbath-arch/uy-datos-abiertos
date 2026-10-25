@@ -193,6 +193,23 @@ FUENTES: dict[str, Fuente] = {
             "las filas «Total» van mezcladas y los mapas por departamento muestran un solo año."
         ),
     },
+    "ose": {
+        "lector": "ose",
+        "tipo": "catalogo",
+        # El dataset `calidad-de-agua` vive en el CKAN **propio de OSE** (datos.ose.com.uy), no en
+        # catalogodatos.gub.uy: `deriva()` consulta el catálogo nacional y no lo encontraría. Queda
+        # sin datasets a propósito, como `mides`; lo vigila el test `red` de `test_ose.py`, que le
+        # pregunta a su CKAN por los dos nombres de archivo.
+        "datasets": (),
+        "recurso": None,
+        "medido": "2026-10-25",
+        "trampa": (
+            "El separador decimal se parte por localidad (35.062 de los 35.070 pH con punto son de "
+            "Montevideo), el 93,7% de los valores de color son límites de detección `<5`, cuatro "
+            "filas traen el signo al revés (`>0,2`), el pH llega a 251,0 en una escala de 0 a 14 y "
+            "una misma muestra aparece con más de un laboratorio."
+        ),
+    },
     "parlamento": {
         "lector": "parlamento",
         "tipo": "catalogo",

@@ -202,6 +202,11 @@ PENDIENTES: dict[str, str] = {
     "ideuy": "necesita una dirección",
     "mides": "necesita un número de indicador",
     "observatorio": "necesita un slug de indicador",
+    "ose": (
+        "son 122 MB y el dataset se actualiza una vez al año: la señal de cambio sale gratis de "
+        "`ose.recursos_vigentes()` (tamaño y last_modified que declara CKAN) y de "
+        "`ose.hace_falta_bajar()`; la forma la fija el test `red` de `test_ose.py`"
+    ),
     "rut": "no lee una fuente: calcula el dígito verificador",
     "salto_grande": "necesita una estación y una variable",
     "semanas": "no lee una fuente: cuenta semanas ISO",

@@ -26,6 +26,7 @@ Módulos:
 - `parlamento`   — asistencias de las dos cámaras, proyectos desde 1985 y leyes promulgadas.
 - `mides`        — la familia de indicadores de MIDES, todos con la misma forma (copia de 2019).
 - `observatorio` — los indicadores del Observatorio Social del MIDES, de su página viva en gub.uy.
+- `ose`          — calidad del agua potable de OSE, de su propio CKAN: 36 trimestres de 2017 a 2025.
 - `hojas`        — hojas de cálculo XLSX y XLS, con el motor elegido por la firma del archivo.
 - `sanciones`    — sanciones a empresas de Defensa del Consumidor, con su límite de datos personales.
 - `fuentes`      — el manifiesto de las fuentes y si alguna se movió desde la última medición.
@@ -34,6 +35,6 @@ Módulos:
 - `errores`      — la base común de los rechazos: `DatosInvalidos`, que atrapa a los diecinueve.
 """
 
-__version__ = "0.15.1"
+__version__ = "0.16.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"
