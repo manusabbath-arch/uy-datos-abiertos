@@ -2,6 +2,28 @@
 
 ## Sin publicar
 
+## 0.17.0 — 2026-10-27
+
+- **`uydatos.ina`: nivel y caudal del río Uruguay**, del sistema de alerta del INFORM de la
+  INA (`alerta.ina.gob.ar`, abierta y sin token). El mismo dato que publica el HTML de
+  Prefectura, con fecha de carga (`timeupdate`): en las escalas de Prefectura de Salto Grande
+  Arriba/Abajo y Concordia, con la serie histórica completa desde 1931 en un solo request
+  (37.876 lecturas de altura y 33.118 de caudal, con orden y rangos medidos).
+- **Las trampas que hacen que el archivo valga la pena**, todas medidas el 2026-10-27 en
+  `docs/2026-10-27-ina-a5-medicion.md`:
+  - El id es de **serie, no de estación**, y por nombre se lee la fuente equivocada: la
+    estación 283 «CONCORDIA (DNCPVN-61…)» es de Brasil (`rio: RIO URUGUAI`).
+  - El API **no valida el rango**: `timestart > timeend` responde **HTTP 200 con cuerpo
+    vacío**, y también una serie `has_obs: false` (la 938, "Aporte Salto Grande").
+  - **No declara la unidad** (`unit_id` vacía en las 37.876 filas y la metadata sin unidad):
+    la fija el lector, `H` = m y `Q` = m³/s.
+  - La cadencia **no es un dato por día** (2.524 de 34.932 días traen 2 lecturas) y 52 filas
+    están a las 00-02Z: su día uruguayo es el anterior; el desfase va como parámetro.
+  - **El dato del día se carga por la tarde** (12:43-18:01 UY): la frescura se decide contra
+    `timeupdate`, no contra el reloj de la bajada.
+  - **El caudal de Concordia (928) trae 3,5 meses de atraso**, y la cadena de cache sirve
+    versiones viejas a la primera consulta del día (medido con la misma ventana dos veces).
+
 ## 0.16.0 — 2026-10-25
 
 - **`uydatos.ose`: calidad del agua potable de OSE**, de su propio CKAN (`datos.ose.com.uy`, 28

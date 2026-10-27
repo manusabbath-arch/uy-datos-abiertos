@@ -162,6 +162,19 @@ FUENTES: dict[str, Fuente] = {
             "la hora es UTC, no local."
         ),
     },
+    "ina": {
+        "lector": "ina",
+        "tipo": "url",
+        "datasets": (),
+        "recurso": None,
+        "medido": "2026-10-27",
+        "trampa": (
+            "El id es de serie, no de estación: la estación 283 «CONCORDIA (DNCPVN-61…)» es de Brasil, "
+            "el API responde 200 con cuerpo vacío a series y rangos sin datos, no declara la unidad, "
+            "el caudal de Concordia (928) trae 3,5 meses de atraso y la cadena de cache sirve "
+            "versiones viejas a la primera consulta del día."
+        ),
+    },
     "limites": {
         "lector": "limites",
         "tipo": "url",

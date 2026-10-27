@@ -15,6 +15,7 @@ Módulos:
 - `inia`         — clima diario de INIA Salto Grande, con normales y anomalías.
 - `salto_grande` — estaciones hidrometeorológicas de la CTM de Salto Grande.
 - `inumet`       — observaciones meteorológicas horarias de INUMET, en siete estaciones.
+- `ina`          — nivel y caudal del río Uruguay (API del INFORM de la INA), con fecha de carga.
 - `indec`        — IPC nacional de Argentina (API de series de datos.gob.ar).
 - `ibge`         — IPCA de Brasil (API SIDRA del IBGE).
 - `ideuy`        — geocodificación de direcciones uruguayas con IDE.uy, directa e inversa.
@@ -35,6 +36,6 @@ Módulos:
 - `errores`      — la base común de los rechazos: `DatosInvalidos`, que atrapa a los diecinueve.
 """
 
-__version__ = "0.16.0"
+__version__ = "0.17.0"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"
