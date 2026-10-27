@@ -37,6 +37,7 @@ from uydatos import (
     errores,
     fuentes,
     ibge,
+    ina,
     indec,
     inia,
     inumet,
@@ -130,6 +131,17 @@ def _de_ibge(d: Path) -> dict:
     return {"ruta": ruta, **_forma(ibge.leer(ruta))}
 
 
+def _de_ina(d: Path) -> dict:
+    """Los 30 días que terminan 3 días atrás, de la altura de Concordia (serie 79).
+
+    El dato del día entra en la tarde (medido el 2026-10-27: 12:43 a 18:01 UY), así que una
+    ventana que lo incluya dependería de la hora del runner y sería un rojo del calendario, no
+    de la fuente. El caudal de Concordia (928) está atrasado 3,5 meses: no entra al adaptador."""
+    hoy = date.today()
+    filas = ina.observaciones(79, hoy - timedelta(days=33), hoy - timedelta(days=3))
+    return {"ruta": d, **_forma(filas)}
+
+
 def _de_indec(d: Path) -> dict:
     ruta = indec.descargar(d / "ipc.json")
     return {"ruta": ruta, **_forma(indec.leer(ruta))}
@@ -187,6 +199,7 @@ VERIFICAR: dict[str, Callable[[Path], dict]] = {
     "compras": _de_compras,
     "elecciones": _de_elecciones,
     "ibge": _de_ibge,
+    "ina": _de_ina,
     "indec": _de_indec,
     "inia": _de_inia,
     "inumet": _de_inumet,
