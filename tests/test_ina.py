@@ -224,7 +224,8 @@ def test_url_sin_red_con_los_params_de_hora_uy():
 
 def test_descarga_arma_las_urls_de_las_seis_series(tmp_path, monkeypatch):
     # El `timeend` va hasta HOY en hora de Uruguay y el `desde` N días atrás: el que consume
-    # decide la frescura contra `timeupdate`, contra el reloj del sello.
+    # decide la frescura contra `timeupdate`, contra el reloj del sello. El hoy UY se calcula
+    # igual que la herramienta (lo que el runner esté en UTC no cambia la URL que se aserta).
     pedidos = []
 
     def fake_bajar(url, destino, **k):
@@ -236,7 +237,10 @@ def test_descarga_arma_las_urls_de_las_seis_series(tmp_path, monkeypatch):
     ina.descargar(tmp_path, dias=10)
     assert len(pedidos) == 6
     for url in pedidos:
-        assert "timeend=" + (date.today() - timedelta(hours=3)).isoformat() + "T23:59:59.000-03:00" in url
+        assert (
+            "timeend=" + (datetime.now(timezone.utc) - timedelta(hours=3)).date().isoformat() + "T23:59:59.000-03:00"
+            in url
+        )
 
 
 # ------------------------------------------------------------ contra la fuente real (se corre con -m red)
