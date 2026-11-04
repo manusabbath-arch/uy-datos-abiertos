@@ -52,3 +52,14 @@ fix(catalogo): el 0 del filtro por etiqueta no es "no hay datos"
 Las ramas y los commits locales son de quien trabaja; publicar una version no. Si el cambio toca la
 version del paquete, mirar antes el `CHANGELOG.md` y el pin del servidor MCP: el MCP declara
 `uydatos>=0.2.1,<0.3` y no resuelve una version nueva hasta que ese pin se mueva a mano.
+
+Para publicar está `scripts/publicar.sh`: sin argumentos muestra qué Release crearía (con las notas
+del `CHANGELOG.md`) y corre ruff y los tests; con `--de-verdad` la crea, y eso dispara
+`publicar.yml`. El CI no publica solo: el trabajo `sin-publicar` avisa en amarillo cuando la versión
+de `main` no está en PyPI.
+
+## Asistentes de IA
+
+Se pueden usar, con la misma regla que todo lo demás: **quien abre el PR responde por cada número**.
+Una cifra que puso un asistente se mide igual que una propia, con el comando al lado; un cambio que
+no se puede explicar sin el asistente no entra. Un PR, una cosa.

@@ -32,6 +32,26 @@ jobs:
       - name: Tests sin red
         run: uv run --python ${{ matrix.python }} --with pytest --with openpyxl --with xlrd --with-editable . pytest -q
 
+  sin-publicar:
+    # La 0.17.0 quedó una semana en main sin Release, y el MCP no la veía (medido el 2026-11-04).
+    # Este trabajo solo avisa: publicar lo decide una persona, con scripts/publicar.sh.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: La versión de main ya está en PyPI
+        run: |
+          version=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/uydatos/$version/json")
+          if [ "$codigo" = 200 ]; then
+            echo "uydatos $version está en PyPI." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$codigo" = 404 ]; then
+            echo "::warning title=Versión sin publicar::uydatos $version está en main y no en PyPI. Publicar con scripts/publicar.sh."
+            echo "**uydatos $version está en main y no en PyPI.** Publicar con \`scripts/publicar.sh --de-verdad\`." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "PyPI respondió $codigo: no se pudo saber si $version está publicada." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   fuentes-reales:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest

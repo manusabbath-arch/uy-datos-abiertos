@@ -15,6 +15,9 @@ su fecha no se cita.
 | `2026-10-17-mapa-del-catalogo.md` | el catálogo por sus dos endpoints (2.777 contra 2.716), qué son los 61 que el buscador no ve, y el histograma de formatos |
 | `2026-10-18-opp-medicion.md` | los 19 datasets de la OPP: 18 congelados desde 2021 o antes, y la decisión de no escribir el lector |
 | `2026-10-19-informe-de-fuentes.md` | qué compara el informe semanal, qué no mide, y cómo se actualiza la línea de base |
+| `2026-10-25-ose-medicion.md` | la calidad del agua potable de OSE antes del lector: el separador decimal partido por localidad, los límites de detección y el pH de 251 |
+| `2026-10-27-ina-a5-medicion.md` | el nivel y caudal del río Uruguay del INFORM (INA a5): id de serie y no de estación, la unidad que no se declara y el atraso del caudal de Concordia |
+| `2026-11-04-mcp-francia.md` | el MCP oficial de data.gouv.fr leído en su código: qué se toma (script de publicación, aviso de no oficial, feedback) y qué se rechaza |
 
 ## El metodo
 

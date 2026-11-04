@@ -1,0 +1,23 @@
+name: Proponer una fuente
+description: Una fuente pública de Uruguay o la región que valdría la pena leer.
+labels: ["fuente-nueva"]
+body:
+  - type: input
+    id: fuente
+    attributes:
+      label: La fuente
+      description: Organismo y enlace al dataset o a la API.
+    validations:
+      required: true
+  - type: textarea
+    id: pregunta
+    attributes:
+      label: Qué pregunta contesta
+      description: La pregunta concreta que hoy no se puede contestar sin ella. Una fuente sin pregunta no entra.
+    validations:
+      required: true
+  - type: textarea
+    id: trampa
+    attributes:
+      label: La trampa, si ya la viste (opcional)
+      description: Algo que no da error y produce una cifra creíble pero falsa.

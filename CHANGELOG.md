@@ -2,6 +2,17 @@
 
 ## Sin publicar
 
+- **`scripts/publicar.sh`**: crea la Release `v<versión>` con las notas de su sección del
+  CHANGELOG, después de ruff y los tests. Sin `--de-verdad` solo muestra lo que haría. La 0.17.0
+  quedó una semana en `main` sin Release (medido el 2026-11-04), y el MCP no la veía.
+- **El CI avisa cuando la versión de `main` no está en PyPI** (trabajo `sin-publicar`): queda en
+  amarillo, no publica. Publicar lo sigue decidiendo una persona.
+- Un test exige que la versión de `pyproject.toml` tenga su sección `## <versión> — AAAA-MM-DD`.
+- README: **«No es oficial»** y cómo avisar de una fuente que cambió o proponer una nueva, con dos
+  plantillas de issue. `CONTRIBUTING.md`: cómo se publica y la regla para los asistentes de IA.
+- `docs/2026-11-04-mcp-francia.md`: el MCP de data.gouv.fr leído en su código, con lo que se toma y
+  lo que se rechaza.
+
 ## 0.17.0 — 2026-10-27
 
 - **`uydatos.ina`: nivel y caudal del río Uruguay**, del sistema de alerta del INFORM de la
