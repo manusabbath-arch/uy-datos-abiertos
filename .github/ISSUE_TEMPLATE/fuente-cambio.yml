@@ -1,0 +1,31 @@
+name: Una fuente cambió o dejó de leerse
+description: Un lector levanta un error, o devuelve algo distinto a lo que publica el organismo.
+labels: ["fuente"]
+body:
+  - type: input
+    id: modulo
+    attributes:
+      label: Módulo
+      placeholder: uydatos.ancap
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión de uydatos
+      description: "`python -c \"import uydatos; print(uydatos.__version__)\"`"
+    validations:
+      required: true
+  - type: textarea
+    id: comando
+    attributes:
+      label: El comando, y lo que devolvió
+      description: El error completo, o la cifra junto con la que publica el organismo (con el enlace).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: sello
+    attributes:
+      label: El archivo bajado (opcional)
+      description: "Fecha y sha256 del archivo, por ejemplo con `uydatos.procedencia.sello(...)`. Sirve para saber si la fuente cambió o cambió el lector."

@@ -141,6 +141,19 @@ python -m uydatos.revisiones desde-json datos/   # qué cambió entre el informe
 `estado` pregunta la fecha del recurso que cada lector usa, no la de una URL recordada: `movido`
 significa «volver a medir», no «el dato cambió».
 
+## No es oficial
+
+`uydatos` es un proyecto independiente: **no es de Agesic ni de ningún organismo**, y no habla en
+nombre de las fuentes que lee. Si una cifra de acá no coincide con la que publica el organismo,
+manda la del organismo, y el lector tiene un error que hay que reportar.
+
+## Avisar algo
+
+- **Una fuente cambió o dejó de leerse**: [abrí un issue](https://github.com/manusabbath-arch/uy-datos-abiertos/issues/new?template=fuente-cambio.yml)
+  con el módulo, el comando y el error. El informe semanal del CI suele verlo, pero no todo.
+- **Proponer una fuente**: [con esta plantilla](https://github.com/manusabbath-arch/uy-datos-abiertos/issues/new?template=fuente-nueva.yml),
+  que pide la pregunta que la fuente contesta. Una fuente sin pregunta no entra (`docs/plantilla-lector.md`).
+
 ## Datos
 
 Este repositorio publica **código**, no datos. Cada fuente tiene sus propias condiciones de uso;
