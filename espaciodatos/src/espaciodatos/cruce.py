@@ -63,7 +63,8 @@ def comparar(
         a, b = por_jpl[k], por_esa[k]
         d = b["ps_cum"] - a["ps_cum"]
         if abs(d) > umbral_ps:
-            diferencias.append({"clave": k, "ps_jpl": a["ps_cum"], "ps_esa": b["ps_cum"], "diferencia": d})
+            # Los Palermo vienen con dos decimales: la resta se redondea igual, sin ruido de coma flotante
+            diferencias.append({"clave": k, "ps_jpl": a["ps_cum"], "ps_esa": b["ps_cum"], "diferencia": round(d, 2)})
     diferencias.sort(key=lambda x: -abs(x["diferencia"]))
 
     esa_retirado_por_jpl = [

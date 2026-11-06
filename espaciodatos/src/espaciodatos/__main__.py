@@ -13,9 +13,9 @@ from typing import Optional, Sequence
 
 from uydatos import procedencia
 
-from espaciodatos import bolidos, cad, cruce, esa, sentry
+from espaciodatos import _jpl, bolidos, cad, clima, cruce, esa, sentry, vigilancia
 
-LECTORES = {"cad": cad, "sentry": sentry, "bolidos": bolidos, "esa": esa}
+LECTORES = {"cad": cad, "sentry": sentry, "bolidos": bolidos, "esa": esa, "clima": clima}
 
 
 def bajar_todo(carpeta: Path) -> dict[str, Path]:
@@ -48,13 +48,54 @@ def imprimir_cruce(carpeta: Path, limite: int = 8) -> None:
     print(procedencia.como_linea(esa.sello(carpeta / "esa_riesgo.txt", filas=c["esa"])))
 
 
+def informe_vigilancia(antes: Path, despues: Path, *, dias: int = 30, max_ld: float = 5.0) -> str:
+    """El informe de vigilancia entre dos carpetas bajadas con `todo`. No sale a la red.
+
+    Los próximos acercamientos salen de `despues/cad.json` si está."""
+    antes, despues = Path(antes), Path(despues)
+    retirados = sentry.leer_retirados(despues / "sentry_retirados.json")
+    jpl = vigilancia.comparar_sentry(
+        sentry.leer(antes / "sentry.json"), sentry.leer(despues / "sentry.json"), retirados
+    )
+    lista = esa.leer(despues / "esa_riesgo.txt")
+    e = vigilancia.comparar_esa(esa.leer(antes / "esa_riesgo.txt"), lista)
+    c = cruce.comparar(sentry.leer(despues / "sentry.json"), lista, retirados)
+    ahora = _jpl.ahora_utc()
+    prox = None
+    sellos = [
+        procedencia.como_linea(sentry.sello(despues / "sentry.json")),
+        procedencia.como_linea(esa.sello(despues / "esa_riesgo.txt")),
+    ]
+    if (despues / "cad.json").is_file():
+        prox = cad.proximos(cad.leer(despues / "cad.json"), desde=ahora, dias=dias, max_ld=max_ld)
+        sellos.append(procedencia.como_linea(cad.sello(despues / "cad.json")))
+    return vigilancia.informe(
+        jpl,
+        e,
+        retirados_jpl_que_esa_lista=c["esa_lista_lo_que_jpl_retiro"],
+        proximos=prox,
+        sellos=sellos,
+        generado=ahora,
+    )
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if not argv or argv[0] not in (*LECTORES, "cruce", "todo"):
+    if not argv or argv[0] not in (*LECTORES, "cruce", "todo", "vigilar", "herramienta"):
         print(__doc__)
-        print("fuentes: " + ", ".join([*LECTORES, "cruce", "todo"]))
+        print("fuentes: " + ", ".join([*LECTORES, "cruce", "todo", "vigilar", "herramienta"]))
         return 2
     fuente, resto = argv[0], argv[1:]
+    if fuente == "herramienta":
+        from espaciodatos import herramientas
+
+        return herramientas.main(resto)
+    if fuente == "vigilar":
+        if len(resto) != 2:
+            print("vigilar necesita dos carpetas: la copia anterior y la nueva")
+            return 2
+        print(informe_vigilancia(Path(resto[0]), Path(resto[1])), end="")
+        return 0
     if fuente in LECTORES:
         return LECTORES[fuente].main(resto)
     if not resto:
