@@ -32,6 +32,26 @@ jobs:
       - name: Tests sin red
         run: uv run --python ${{ matrix.python }} --with pytest --with openpyxl --with xlrd --with-editable . pytest -q
 
+  espaciodatos:
+    # El paquete hermano vive en `espaciodatos/` y depende de este: se prueba con el `uydatos` del
+    # mismo commit, en la versión mínima y en la última.
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"]
+    defaults:
+      run:
+        working-directory: espaciodatos
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Lint
+        run: uvx ruff check src tests && uvx ruff format --check src tests
+      - name: Tests sin red
+        run: uv run --python ${{ matrix.python }} --with pytest --with-editable .. --with-editable . pytest -q
+
   fuentes-reales:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -40,6 +60,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
       - name: Tests contra las fuentes reales
         run: uv run --python 3.13 --with pytest --with openpyxl --with xlrd --with-editable . pytest -q -m red
+      - name: Tests de espaciodatos contra JPL y ESA
+        if: always()
+        working-directory: espaciodatos
+        run: uv run --python 3.13 --with pytest --with-editable .. --with-editable . pytest -q -m red
       - name: Qué fuente se movió
         # continue-on-error: si el catálogo no contesta, el trabajo igual publica el resultado de los
         # tests, que es la información principal. Una fecha del catálogo no es una revisión (medido

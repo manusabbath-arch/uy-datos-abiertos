@@ -1,0 +1,45 @@
+[project]
+name = "espaciodatos"
+version = "0.1.0"
+description = "Lectores estrictos de datos abiertos del espacio cercano: acercamientos, riesgo de impacto (JPL y ESA) y bólidos."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Manu Martinez" }]
+keywords = ["asteroides", "neo", "sentry", "esa", "jpl", "datos-abiertos", "open-data"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Spanish",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Typing :: Typed",
+]
+requires-python = ">=3.10"
+# La única dependencia es el paquete hermano, que a su vez no tiene ninguna: de él salen la red,
+# el sello de procedencia y la base de los rechazos.
+dependencies = ["uydatos>=0.17"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/espaciodatos"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not red'"
+markers = [
+    "red: sale a internet contra la fuente real; se corre a mano con `pytest -m red`",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
