@@ -15,6 +15,7 @@ su fecha no se cita.
 | `2026-10-17-mapa-del-catalogo.md` | el catálogo por sus dos endpoints (2.777 contra 2.716), qué son los 61 que el buscador no ve, y el histograma de formatos |
 | `2026-10-18-opp-medicion.md` | los 19 datasets de la OPP: 18 congelados desde 2021 o antes, y la decisión de no escribir el lector |
 | `2026-10-19-informe-de-fuentes.md` | qué compara el informe semanal, qué no mide, y cómo se actualiza la línea de base |
+| `2026-11-06-fuentes-movidas.md` | tres fuentes que cambiaron: el RUT de las sanciones destruido por una planilla, dos copias del viento de INUMET (la nueva sin dirección en 2026), y el bloqueo de CloudFront al Parlamento |
 
 ## El metodo
 

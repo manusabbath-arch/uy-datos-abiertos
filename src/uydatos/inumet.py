@@ -251,6 +251,11 @@ def resumen(serie: list[dict], desfase_horas: int = DESFASE_LOCAL) -> dict:
 
     Los **extremos** están acá y no en una validación aparte porque son lo que deja ver un valor
     imposible sin rechazar el archivo: `heliofania` trae 63,2 h de brillo del Sol en un día.
+
+    `ultimo_con_dato` dice, por columna, la última observación que trae valor. Un total de nulos no
+    dice **dónde** están: medido el 2026-11-06, la copia del viento de ese día trae 3.620 nulos de
+    dirección en Melilla, que en 29.194 filas parecen ruido, y son **todo 2026**: la dirección
+    termina el 2025-12-31 y la serie sigue hasta el 2026-11-06.
     """
     if not serie:
         raise InumetInvalido("serie vacía: no hay nada que medir")
@@ -279,6 +284,9 @@ def resumen(serie: list[dict], desfase_horas: int = DESFASE_LOCAL) -> dict:
             "primera": min(f["fecha"] for f in filas),
             "ultima": max(f["fecha"] for f in filas),
             "nulos": {c: sum(1 for f in filas if f[c] is None) for c in columnas},
+            "ultimo_con_dato": {
+                c: max((f["fecha"] for f in filas if f[c] is not None), default=None) for c in columnas
+            },
             "extremos": {
                 c: {
                     "min": min((f[c] for f in filas if f[c] is not None), default=None),
@@ -347,21 +355,57 @@ def serie_diaria(
     return salida
 
 
-def descargar(nombre: str, destino: Path) -> Path:
+def _id_recurso(url: str) -> str:
+    """El id del recurso CKAN de una URL de descarga (`.../resource/<id>/download/...`)."""
+    m = re.search(r"/resource/([0-9a-f-]{36})/", url)
+    return m.group(1) if m else ""
+
+
+def candidatos(nombre: str) -> list[dict]:
+    """Los recursos de datos (`inumet_*.csv`) del dataset de `nombre`, con su id y su fecha de
+    modificación, del más viejo al más nuevo. **Sale a la red.**
+
+    Medido el 2026-11-06: el dataset del viento tiene **dos** juegos completos (CSV, XML, XLSX y
+    metadato), uno del 2026-10-31 y otro del 2026-11-06, con los mismos nombres de archivo."""
+    from uydatos.catalogo import recursos
+
+    if nombre not in DATASETS:
+        raise InumetInvalido(f"variable desconocida {nombre!r}; las declaradas son {tuple(DATASETS)}")
+    out = [
+        {"id": _id_recurso(r["url"]), "modificado": r["modificado"], "url": r["url"]}
+        for r in recursos(DATASETS[nombre][0])
+        if _ARCHIVO.match(Path(r["url"].split("?")[0]).name)
+    ]
+    return sorted(out, key=lambda r: r["modificado"])
+
+
+def descargar(nombre: str, destino: Path, *, recurso: Optional[str] = None) -> Path:
     """Baja el CSV de datos de `nombre` (una clave de `DATASETS`) a `destino`. **Sale a la red.**
 
     El recurso de datos se elige por el nombre del archivo (`inumet_*.csv`), medido en los seis
     datasets: el catálogo publica además el metadato, y en algunos casos también en CSV.
-    """
-    from uydatos.catalogo import bajar_recurso, recursos
 
-    if nombre not in DATASETS:
-        raise InumetInvalido(f"variable desconocida {nombre!r}; las declaradas son {tuple(DATASETS)}")
-    dataset = DATASETS[nombre][0]
-    candidatos = [r for r in recursos(dataset) if _ARCHIVO.match(Path(r["url"].split("?")[0]).name)]
-    if len(candidatos) != 1:
-        raise InumetInvalido(f"{dataset}: {len(candidatos)} recursos de datos, se esperaba 1")
-    return bajar_recurso(candidatos[0]["url"], Path(destino))
+    **Si hay más de uno, no se elige el más nuevo**: se rechaza con la lista, y `recurso` (el id
+    CKAN) elige uno a mano. Medido el 2026-11-06 en el viento: la copia más nueva tiene una semana
+    más de datos y **la dirección de todo 2026 vacía** (25.572 de 25.572 nulas); la del 31/10 la
+    tiene completa. Elegir por fecha pierde un año de dirección sin un error.
+    """
+    from uydatos.catalogo import bajar_recurso
+
+    dataset = DATASETS[nombre][0] if nombre in DATASETS else nombre
+    hay = candidatos(nombre)
+    if recurso is not None:
+        elegido = [r for r in hay if r["id"] == recurso]
+        if not elegido:
+            raise InumetInvalido(f"{dataset}: el recurso {recurso!r} no es uno de {[r['id'] for r in hay]}")
+        return bajar_recurso(elegido[0]["url"], Path(destino))
+    if len(hay) != 1:
+        lista = "; ".join(f"{r['id']} (modificado {r['modificado'][:16]})" for r in hay)
+        raise InumetInvalido(
+            f"{dataset}: {len(hay)} recursos de datos, se esperaba 1: {lista}. No se elige por fecha: "
+            "comparar las copias (resumen → ultimo_con_dato) y pasar recurso=<id>"
+        )
+    return bajar_recurso(hay[0]["url"], Path(destino))
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -370,6 +414,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     bajar = sub.add_parser("bajar", help="baja el CSV de una variable del catálogo")
     bajar.add_argument("nombre", choices=sorted(DATASETS))
     bajar.add_argument("destino", type=Path)
+    bajar.add_argument("--recurso", help="id CKAN del recurso, cuando el dataset publica más de un CSV")
     leer = sub.add_parser("resumen", help="cobertura de la serie horaria")
     leer.add_argument("archivo", type=Path)
     leer.add_argument("nombre", choices=sorted(DATASETS))
@@ -381,7 +426,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = ap.parse_args(argv)
 
     if args.orden == "bajar":
-        print(descargar(args.nombre, args.destino))
+        print(descargar(args.nombre, args.destino, recurso=args.recurso))
         return 0
     if args.orden == "resumen":
         # Se lee con las columnas declaradas del dataset, no con `valor_por_estacion()`: el resumen
@@ -396,7 +441,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 f"({d['dias_completos']} completos)  nulos {d['nulos']}"
             )
             for columna, e in d["extremos"].items():
-                print(f"      {columna}: {e['min']} .. {e['max']}")
+                ultimo = d["ultimo_con_dato"][columna]
+                aviso = "" if ultimo == d["ultima"] else f"  ← último dato {ultimo}"
+                print(f"      {columna}: {e['min']} .. {e['max']}{aviso}")
         return 0
     serie = leer_archivo(args.archivo, _columnas_de(args.columna))
     diaria = serie_diaria(serie, args.estacion, args.columna, args.agregacion)

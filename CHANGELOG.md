@@ -2,6 +2,18 @@
 
 ## Sin publicar
 
+- **`uydatos.sanciones`: el archivo de 2025** (`datos_sanciones_2017_2025.csv`, publicado el
+  2026-11-03): 1.835 resoluciones. La columna `motivo_sancion` pasó a llamarse `tipo_infraccion`
+  (se aceptan las dos). **El RUT viene en notación científica en 1.738 filas** y 120 de esos RUT
+  truncados los comparten empresas distintas: el lector devuelve `rut = None`, con `rut_crudo` y
+  `rut_en_notacion_cientifica`, nunca el número. Montos y departamentos vacíos (los de 2025) son
+  `None`. **Cambio de forma**: `rut` y `departamento` pueden ser `None`, y `monto_ur` también.
+- **`uydatos.inumet`: dos copias del viento.** El catálogo publica dos CSV con el mismo nombre y
+  el más nuevo trae la dirección de todo 2026 vacía. `descargar()` sigue rechazando, ahora con los
+  ids y sus fechas, y acepta `recurso=<id>`; `candidatos()` los lista; `resumen()` agrega
+  `ultimo_con_dato` por columna.
+- Lo medido, en `docs/2026-11-06-fuentes-movidas.md`.
+
 ## 0.17.0 — 2026-10-27
 
 - **`uydatos.ina`: nivel y caudal del río Uruguay**, del sistema de alerta del INFORM de la

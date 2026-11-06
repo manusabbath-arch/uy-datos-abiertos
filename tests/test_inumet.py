@@ -268,3 +268,82 @@ class TestResumen:
 
     def test_las_siete_estaciones_del_metadato(self):
         assert len(ESTACIONES) == 7 and "Salto G3" in ESTACIONES
+
+
+class TestDosCopias:
+    """Medido el 2026-11-06: el dataset del viento publica dos juegos completos con los mismos
+    nombres, del 31/10 y del 06/11, y el nuevo trae la dirección de todo 2026 vacía."""
+
+    BASE = "https://catalogodatos.gub.uy/dataset/57247625-faec-4227-8025-cfc113e18c5c/resource"
+    VIEJO = "943ff07c-17d1-4397-932a-7b5b21b49375"
+    NUEVO = "5dcb9447-0195-4968-b026-138e6b9375a1"
+
+    def _catalogo(self, monkeypatch, ids):
+        from uydatos import catalogo
+
+        fechas = {self.VIEJO: "2026-10-31T04:06:46", self.NUEVO: "2026-11-06T04:06:28"}
+        recursos = [
+            {
+                "nombre": "Metadatos",
+                "url": f"{self.BASE}/x/download/metadatos_inumet_intensidad_de_viento.json",
+                "formato": "JSON",
+                "modificado": "2026-11-06",
+            },
+        ] + [
+            {
+                "nombre": "Intensidad de viento",
+                "url": f"{self.BASE}/{i}/download/inumet_intensidad_de_viento.csv",
+                "formato": "CSV",
+                "modificado": fechas[i],
+            }
+            for i in ids
+        ]
+        bajados = []
+        monkeypatch.setattr(catalogo, "recursos", lambda dataset: recursos)
+        monkeypatch.setattr(catalogo, "bajar_recurso", lambda url, destino: bajados.append(url) or destino)
+        return bajados
+
+    def test_con_dos_csv_no_se_elige_el_mas_nuevo(self, monkeypatch, tmp_path):
+        from uydatos import inumet
+
+        bajados = self._catalogo(monkeypatch, [self.NUEVO, self.VIEJO])
+        with pytest.raises(InumetInvalido, match="2 recursos de datos.*No se elige por fecha") as e:
+            inumet.descargar("viento", tmp_path / "v.csv")
+        assert self.VIEJO in str(e.value) and self.NUEVO in str(e.value)
+        assert bajados == []
+
+    def test_los_candidatos_van_del_mas_viejo_al_mas_nuevo(self, monkeypatch):
+        from uydatos import inumet
+
+        self._catalogo(monkeypatch, [self.NUEVO, self.VIEJO])
+        assert [c["id"] for c in inumet.candidatos("viento")] == [self.VIEJO, self.NUEVO]
+
+    def test_el_recurso_se_elige_a_mano(self, monkeypatch, tmp_path):
+        from uydatos import inumet
+
+        bajados = self._catalogo(monkeypatch, [self.NUEVO, self.VIEJO])
+        inumet.descargar("viento", tmp_path / "v.csv", recurso=self.VIEJO)
+        assert bajados == [f"{self.BASE}/{self.VIEJO}/download/inumet_intensidad_de_viento.csv"]
+        with pytest.raises(InumetInvalido, match="no es uno de"):
+            inumet.descargar("viento", tmp_path / "v.csv", recurso="ffffffff-ffff-ffff-ffff-ffffffffffff")
+
+    def test_con_un_solo_csv_se_baja_sin_pedir_nada(self, monkeypatch, tmp_path):
+        from uydatos import inumet
+
+        bajados = self._catalogo(monkeypatch, [self.VIEJO])
+        inumet.descargar("viento", tmp_path / "v.csv")
+        assert len(bajados) == 1
+
+    def test_el_resumen_dice_hasta_cuando_hay_dato_de_cada_columna(self, tmp_path):
+        # La forma medida: la dirección termina el 31/12 y la intensidad sigue
+        p = tmp_path / "viento.csv"
+        p.write_text(
+            "fecha;estacion_id;dir_viento;int_viento\n"
+            "2025-12-31 22:00;Aeropuerto Melilla G3;332;12\n"
+            "2026-01-01 00:00;Aeropuerto Melilla G3;;13\n"
+            "2026-01-01 02:00;Aeropuerto Melilla G3;;9\n",
+            encoding="utf-8",
+        )
+        d = resumen(leer_archivo(p, DATASETS["viento"][1]))["estaciones"]["Aeropuerto Melilla G3"]
+        assert d["ultimo_con_dato"]["dir_viento"] == datetime(2025, 12, 31, 22, 0)
+        assert d["ultimo_con_dato"]["int_viento"] == d["ultima"] == datetime(2026, 1, 1, 2, 0)
