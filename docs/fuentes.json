@@ -235,19 +235,21 @@
     },
     {
       "lector": "sanciones",
-      "filas": 1528,
+      "filas": 1835,
       "columnas": [
         "razon_social",
         "nombre_comercial",
         "rut",
+        "rut_crudo",
+        "rut_en_notacion_cientifica",
         "departamento",
         "fecha",
         "motivo",
         "tipo",
         "monto_ur"
       ],
-      "bytes": 168759,
-      "sha256": "241a78a15e951bf960f93efc12aebe0d04dc343b24198a2fa4899d1872dd4cd0",
+      "bytes": 191915,
+      "sha256": "2389481356510dbfa2115bf33312e286349eeae4527500fdcc2e25b6a066eb26",
       "ok": true,
       "motivo": ""
     },

@@ -24,6 +24,27 @@ Las trampas, medidas:
   831 apercibimientos vienen con 0. No hay ningún monto vacío en las 1.528 filas.
 - **Sólo aparecen 13 de los 19 departamentos, y Salto no está entre ellos** (Montevideo 1.257 y
   Canelones 115): si aparece una resolución salteña, la fuente cambió.
+
+**El archivo cambió el 2026-11-03** (medido el 2026-11-06): ahora es `datos_sanciones_2017_2025.csv`,
+191.915 bytes, sha256 `2389481356510dbfa2115bf33312e286349eeae4527500fdcc2e25b6a066eb26`,
+**1.835 resoluciones** (las 1.528 de antes más 307 de 2025; sigue en cp1252 y con `;`). Lo nuevo:
+
+- **La columna `motivo_sancion` pasó a llamarse `tipo_infraccion`.** Las dos formas medidas del
+  encabezado se aceptan, y las dos llegan a la clave `motivo`.
+- **El RUT viene en notación científica en 1.738 de 1.835 filas (94,7 %)**: `2,17795E+11`. El
+  archivo pasó por una planilla que convirtió el RUT en número y le comió los dígitos: de 12
+  quedan 6. **No se puede recuperar.** Y es peor que un dato perdido: **120 de esos RUT
+  truncados los comparten empresas distintas** (404 filas): dos razones sociales sin relación
+  quedan las dos como `2,17795E+11`. Agrupar por RUT atribuye a una empresa las sanciones de
+  otra. El lector devuelve `rut = None` con `rut_crudo` y la marca `rut_en_notacion_cientifica`;
+  **nunca el número**. Sólo 94 filas conservan un RUT de 12 dígitos (y una, uno de 11).
+- **Las 307 resoluciones de 2025 vienen sin departamento**, y 230 de ellas sin monto (229
+  apercibimientos y 1 «Instrucción»). Antes no había ningún monto vacío: un vacío es nulo, no
+  cero, aunque los apercibimientos de 2017-2024 traigan 0.
+- **«Instrucción»** pasa de 2 filas a 3 (la nueva, de 2025, sin monto). Apercibimientos: 831 →
+  1.060; multas: 695 → 772.
+- Un RUT `N/D` y uno vacío: se devuelven como `None`.
+
 - **El archivo trae `razon_social` y `rut` de terceros.** Es un dato público —está en el catálogo
   abierto— y el lector devuelve las filas **tal cual**: qué se versiona y qué se cruza no es
   decisión de esta función. El límite está escrito en el README (`## Datos personales`).
@@ -49,7 +70,7 @@ from uydatos import catalogo, red
 from uydatos.errores import DatosInvalidos
 
 DATASET = "defensa-del-consumidor-sanciones-a-empresas"
-COLUMNAS = [
+COLUMNAS_2024 = [
     "razon_social",
     "nombre_comercial",
     "rut",
@@ -59,6 +80,12 @@ COLUMNAS = [
     "tipo_sancion",
     "monto_ur",
 ]
+# Desde el archivo del 2026-11-03: la sexta columna cambió de nombre, el resto es igual.
+COLUMNAS_2025 = [*COLUMNAS_2024[:5], "tipo_infraccion", *COLUMNAS_2024[6:]]
+COLUMNAS = COLUMNAS_2025
+ENCABEZADOS = (COLUMNAS_2024, COLUMNAS_2025)
+_RUT_CIENTIFICO = re.compile(r"^\d,\d+E\+\d+$")
+RUT_SIN_DATO = {"", "N/D"}
 CODIFICACION = "cp1252"
 DELIMITADOR = ";"
 
@@ -95,11 +122,28 @@ def _fecha(texto: str, ruta: Path, fila: int) -> date:
         raise SancionesInvalido(f"{ruta.name} fila {fila}: fecha imposible {texto!r} ({e})") from e
 
 
+def rut(crudo: str) -> tuple[Optional[str], bool]:
+    """El RUT de una fila y si venía en notación científica.
+
+    `"219000000004    "` → `("219000000004", False)`; `"2,17795E+11"` → `(None, True)`: un RUT
+    truncado por una planilla no se devuelve, porque convertirlo en número inventa dígitos y junta
+    empresas distintas. `"N/D"` y vacío → `(None, False)`. Lo demás (un RUT de 3 caracteres, uno de
+    11) se devuelve tal cual: es lo que dice la fuente, y `resumen()` lo cuenta."""
+    t = crudo.strip()
+    if _RUT_CIENTIFICO.match(t):
+        return None, True
+    if t in RUT_SIN_DATO:
+        return None, False
+    return t, False
+
+
 def leer(ruta: Path) -> list[dict]:
     """Las resoluciones, una por fila, con `rut` sin relleno y `fecha` como `date`.
 
-    `monto_ur` es `int` (0 es un cero medido). Las columnas de texto se devuelven tal cual vienen,
-    sin normalizar mayúsculas ni tildes: quien cruce decide eso.
+    `monto_ur` es `int` (0 es un cero medido) o `None` si viene vacío (las 230 de 2025). `rut` es
+    `None` si vino en notación científica (ver `rut()`), con el texto en `rut_crudo`.
+    `departamento` vacío es `None`. Las columnas de texto se devuelven tal cual vienen, sin
+    normalizar mayúsculas ni tildes: quien cruce decide eso.
     """
     ruta = Path(ruta)
     if not ruta.is_file():
@@ -110,25 +154,36 @@ def leer(ruta: Path) -> list[dict]:
             encabezado = [c.replace("\ufeff", "").strip() for c in next(lector)]
         except StopIteration:
             raise SancionesInvalido(f"{ruta}: archivo vacío") from None
-        if encabezado != COLUMNAS:
-            raise SancionesInvalido(f"{ruta}: columnas inesperadas {encabezado}, se esperaban {COLUMNAS}")
+        if encabezado not in ENCABEZADOS:
+            raise SancionesInvalido(
+                f"{ruta}: columnas inesperadas {encabezado}; las medidas son {COLUMNAS_2024} (hasta 2024) "
+                f"y {COLUMNAS_2025} (desde el 2026-11-03)"
+            )
         filas = []
         for n, campos in enumerate(lector, start=2):
             if not any(c.strip() for c in campos):
                 continue
             if len(campos) != len(COLUMNAS):
                 raise SancionesInvalido(f"{ruta} fila {n}: {len(campos)} columnas, se esperaban {len(COLUMNAS)}")
-            razon, comercial, rut, dpto, fecha_cruda, motivo, tipo, monto_crudo = (c.strip() for c in campos)
-            try:
-                monto = int(monto_crudo)
-            except ValueError:
-                raise SancionesInvalido(f"{ruta} fila {n}: monto ilegible {monto_crudo!r} (no es un entero)") from None
+            razon, comercial, rut_texto, dpto, fecha_cruda, motivo, tipo, monto_crudo = (c.strip() for c in campos)
+            if monto_crudo == "":
+                monto = None  # un vacío es nulo: no se supone el 0 de un apercibimiento
+            else:
+                try:
+                    monto = int(monto_crudo)
+                except ValueError:
+                    raise SancionesInvalido(
+                        f"{ruta} fila {n}: monto ilegible {monto_crudo!r} (no es un entero)"
+                    ) from None
+            rut_limpio, cientifico = rut(rut_texto)
             filas.append(
                 {
                     "razon_social": razon,
                     "nombre_comercial": comercial,
-                    "rut": rut,
-                    "departamento": dpto,
+                    "rut": rut_limpio,
+                    "rut_crudo": rut_texto,
+                    "rut_en_notacion_cientifica": cientifico,
+                    "departamento": dpto or None,
                     "fecha": _fecha(fecha_cruda, ruta, n),
                     "motivo": motivo,
                     "tipo": tipo,
@@ -145,11 +200,22 @@ def resumen(filas: list[dict]) -> dict:
     se declara en vez de corregirse (RUT que no tienen 12 caracteres, años, departamentos)."""
     if not filas:
         raise SancionesInvalido("resumen() necesita al menos una fila: el archivo vino vacío")
+    truncados: dict[str, set] = {}
+    for f in filas:
+        if f["rut_en_notacion_cientifica"]:
+            truncados.setdefault(f["rut_crudo"], set()).add(f["razon_social"])
+    compartidos = {k for k, v in truncados.items() if len(v) > 1}
     return {
         "filas": len(filas),
         "por_motivo": dict(Counter(f["motivo"] for f in filas).most_common()),
         "por_tipo": dict(Counter(f["tipo"] for f in filas).most_common()),
-        "rut_sin_12": sum(1 for f in filas if len(f["rut"]) != 12),
+        "rut_sin_12": sum(1 for f in filas if f["rut"] is not None and len(f["rut"]) != 12),
+        "rut_nulo": sum(1 for f in filas if f["rut"] is None),
+        "rut_en_notacion_cientifica": sum(1 for f in filas if f["rut_en_notacion_cientifica"]),
+        "rut_truncado_compartido": len(compartidos),
+        "filas_con_rut_compartido": sum(1 for f in filas if f["rut_crudo"] in compartidos),
+        "monto_nulo": sum(1 for f in filas if f["monto_ur"] is None),
+        "sin_departamento": sum(1 for f in filas if f["departamento"] is None),
         "anio_min": min(f["fecha"].year for f in filas),
         "anio_max": max(f["fecha"].year for f in filas),
         "departamentos": dict(Counter(f["departamento"] for f in filas).most_common()),
@@ -168,13 +234,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     filas = leer(args.ruta)
     if args.accion == "filas":
         for f in filas[: args.limite]:
-            print(f"{f['fecha']} {f['departamento']:<12} {f['tipo']:<15} {f['motivo']:<28} {f['razon_social'][:40]}")
+            print(
+                f"{f['fecha']} {f['departamento'] or '-':<12} {f['tipo']:<15} {f['motivo']:<28} "
+                f"{f['razon_social'][:40]}"
+            )
         return 0
     r = resumen(filas)
     print(f"{r['filas']} resoluciones de {r['anio_min']} a {r['anio_max']} · RUT sin 12: {r['rut_sin_12']}")
+    if r["rut_en_notacion_cientifica"]:
+        print(
+            f"  RUT en notación científica (irrecuperables): {r['rut_en_notacion_cientifica']}; "
+            f"{r['rut_truncado_compartido']} los comparten empresas distintas ({r['filas_con_rut_compartido']} filas)"
+        )
+    print(f"  sin monto: {r['monto_nulo']} · sin departamento: {r['sin_departamento']}")
     for k, v in list(r["por_motivo"].items())[:5]:
         print(f"  {v:>4}  {k}")
-    print("  por departamento:", ", ".join(f"{k} {v}" for k, v in list(r["departamentos"].items())[:5]))
+    print(
+        "  por departamento:",
+        ", ".join(f"{k or 'sin departamento'} {v}" for k, v in list(r["departamentos"].items())[:5]),
+    )
     return 0
 
 

@@ -17,6 +17,6 @@ observatorio        --       necesita un slug de indicador
 parlamento         508 filas  fecha, asunto, carpetas, titulo, tipo
 rut                 --       no lee una fuente: calcula el dígito verificador
 salto_grande        --       necesita una estación y una variable
-sanciones         1528 filas  razon_social, nombre_comercial, rut, departamento, fecha, motivo, tipo, monto_ur
+sanciones         1835 filas  razon_social, nombre_comercial, rut, rut_crudo, rut_en_notacion_cientifica, departamento, fecha, motivo, tipo, monto_ur
 semanas             --       no lee una fuente: cuenta semanas ISO
 ursea              580 filas  inicio, fin, vigencia, dias, producto, sin_impuestos, sin_impuestos_con_agro, con_impuestos
