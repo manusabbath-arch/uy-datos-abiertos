@@ -46,6 +46,14 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 | `uydatos.mides` | MIDES, catálogo de datos abiertos | Los 1.869 indicadores de la organización, todos con la misma forma: dimensión libre y `año, valor` al final | El CSV viene en **cp1252**, no en UTF-8: leerlo mal convierte la `ñ` en basura y no falla. |
 | `uydatos.hojas` | El archivo que le des (opcional: `openpyxl` y `xlrd`) | Las filas de una hoja de cálculo XLSX o XLS, con los valores ya tipados | El `formato` que declara el catálogo miente: **23 de 24** recursos «XLS» son XLSX. El motor sale de la firma del archivo, no del metadato. |
 
+## El paquete hermano: `espaciodatos`
+
+En [`espaciodatos/`](espaciodatos/README.md), con la misma regla y la infraestructura de este
+paquete: acercamientos de asteroides a la Tierra (JPL), las listas de riesgo de impacto de JPL y
+de la ESA, bólidos (CNEOS), clima espacial (NOAA), y **dónde no coinciden las dos agencias**: 175 objetos
+que la ESA todavía lista fueron retirados por JPL. Con la vigilancia entre copias y seis
+herramientas en JSON listas para un servidor MCP. Medido el 06/11/2026.
+
 ## Instalación
 
 ```sh

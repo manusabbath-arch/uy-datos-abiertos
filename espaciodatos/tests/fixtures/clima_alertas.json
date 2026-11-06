@@ -1,0 +1,22 @@
+[
+ {
+  "product_id": "EF3A",
+  "issue_datetime": "2026-11-06 10:56:56.870",
+  "message": "Space Weather Message Code: ALTEF3\r\nSerial Number: 3768\r\nIssue Time: 2026 Nov 06 1056 UTC\r\n\r\nCONTINUED ALERT: Electron 2MeV Integral Flux exceeded 1,000pfu\nContinuation of Serial Number: 3767\nBegin Time: 2026 Nov 01 1302 UTC\n\nYesterday Maximum 2MeV Flux: 2197 pfu\nMax time: 2026 Nov 05 1700 UTC"
+ },
+ {
+  "product_id": "TIIA",
+  "issue_datetime": "2026-11-05 18:57:32.737",
+  "message": "Space Weather Message Code: ALTTP2\r\nSerial Number: 1533\r\nIssue Time: 2026 Nov 05 1857 UTC\r\n\r\nALERT: Type II Radio Emission \nBegin Time: 2026 Nov 05 1828 UTC\nEstimate Velocity: 609 km/s\nComment: "
+ },
+ {
+  "product_id": "A20F",
+  "issue_datetime": "2026-11-05 17:45:33.607",
+  "message": "Space Weather Message Code: WATA20\r\nSerial Number: 1136\r\nIssue Time: 2026 Nov 05 1745 UTC\r\n\r\nWATCH: Geomagnetic Storm Category G1 Predicted \nHighest Storm Level Predicted by Day:\nNov 06:  G1 (Minor)   Nov 07:  G1 (Minor)   Nov 08:  G1 (Minor)   \nTHIS SUPERSEDES ANY/ALL PRIOR WATCHES IN EFFECT\nComment: \r\n\r\nNOAA Space Weather Scale descriptions can be found at\r\nwww.swpc.noaa.gov/noaa-scales-explanation\r\n\r\nPotential Impacts: Area of impact primarily poleward of 60 degrees Geomagnetic Latitude.\r\nInduced Currents - Weak power grid fluctuations can occur.\r\nSpacecraft - Minor impact on satellite operations possible.\r\nAurora - Aurora may be visible at high latitudes, i.e., northern tier of the U.S. such as northern Michigan and Maine."
+ },
+ {
+  "product_id": "K04W",
+  "issue_datetime": "2026-11-04 08:19:40.677",
+  "message": "Space Weather Message Code: WARK04\r\nSerial Number: 5447\r\nIssue Time: 2026 Nov 04 0819 UTC\r\n\r\nWARNING: Geomagnetic K-index of 4 expected \nValid From: 2026 Nov 04 0819 UTC\nValid To: 2026 Nov 04 1500 UTC\nWarning Conditions: Onset\nComment: \r\n\r\nNOAA Space Weather Scale descriptions can be found at\r\nwww.swpc.noaa.gov/noaa-scales-explanation\r\n\r\nPotential Impacts: Area of impact primarily poleward of 65 degrees Geomagnetic Latitude.\r\nInduced Currents - Weak power grid fluctuations can occur.\r\nAurora - Aurora may be visible at high latitudes such as Canada and Alaska."
+ }
+]

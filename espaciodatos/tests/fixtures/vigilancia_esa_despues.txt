@@ -1,0 +1,9 @@
+Last Update: 2026-11-06 15:33 UTC
+           Object             |    Diameter    |             VI Max                                   |          VIs                  |
+Num/des.           Name       |   m  |   *=Y   |      Date/Time   |  IP max  | PS max |TS  | Vel km/s | Years     | IP cum   | PS cum |
+AAAAAAAAAAAA AAAAAAAAAAAAAAAA | NNNN |    A    | YYYY-MM-DD HH:MM | EEEEEEEE | NNN.NN | NN |  NNN.NN  | YYYY-YYYY | EEEEEEEE | NNN.NN |
+2008JL3                       |   30 |    *    | 2027-05-01 09:05 |  1.66E-4 |  -2.10 |  0 |   14.01  | 2027-2126 |  1.84E-4 |  -2.10 |
+2026VC3                       |   50 |    *    | 2060-04-21 13:05 | 9.53E-10 |  -8.04 |  0 |   27.81  | 2053-2060 |  1.09E-9 |  -7.97 |
+2026UL1                       |   12 |    *    | 2093-10-20 17:22 |  1.10E-7 |  -8.36 |  0 |   12.05  | 2093-2124 |  1.54E-7 |  -8.25 |
+2026VF2                       |  100 |    *    | 2091-04-25 09:52 | 8.98E-11 |  -8.58 |  0 |   28.26  | 2086-2091 | 1.31E-10 |  -8.40 |
+2026VX1                       |   10 |    *    | 2117-01-09 14:00 |  1.48E-8 |  -9.33 |  0 |   17.34  | 2117-2121 |  3.61E-8 |  -9.09 |
