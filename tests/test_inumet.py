@@ -325,7 +325,7 @@ class TestDosCopias:
         inumet.descargar("viento", tmp_path / "v.csv", recurso=self.VIEJO)
         assert bajados == [f"{self.BASE}/{self.VIEJO}/download/inumet_intensidad_de_viento.csv"]
         with pytest.raises(InumetInvalido, match="no es uno de"):
-            inumet.descargar("viento", tmp_path / "v.csv", recurso="00000000-0000-0000-0000-000000000000")
+            inumet.descargar("viento", tmp_path / "v.csv", recurso="ffffffff-ffff-ffff-ffff-ffffffffffff")
 
     def test_con_un_solo_csv_se_baja_sin_pedir_nada(self, monkeypatch, tmp_path):
         from uydatos import inumet
