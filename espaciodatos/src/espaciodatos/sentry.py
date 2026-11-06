@@ -224,7 +224,13 @@ def descargar(carpeta: Path) -> dict[str, Path]:
 
 
 def sello(ruta: Path, *, filas: Optional[int] = None) -> procedencia.Sello:
-    version = _jpl.firma(_jpl.cargar(ruta), FUENTE, VERSION, Path(ruta).name)
+    """El sello del resumen o de los retirados: se distinguen por el contenido, no por el nombre del
+    archivo (las dos copias dicen "JPL Sentry 2.0" en la firma)."""
+    d = _jpl.cargar(ruta)
+    version = _jpl.firma(d, FUENTE, VERSION, Path(ruta).name)
+    datos = d.get("data") or []
+    if datos and isinstance(datos[0], dict) and set(datos[0]) == {"des", "removed"}:
+        return procedencia.sello(f"JPL Sentry {version} (retirados)", ruta=Path(ruta), url=URL_RETIRADOS, filas=filas)
     return procedencia.sello(f"JPL Sentry {version}", ruta=Path(ruta), url=URL, filas=filas)
 
 

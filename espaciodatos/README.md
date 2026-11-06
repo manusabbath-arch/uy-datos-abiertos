@@ -18,8 +18,12 @@ dependencia.
 | `esa` | ESA NEOCC, lista de riesgo | 2.205 objetos, en texto de ancho fijo | La designación va sin espacio (`2008JL3`): contra JPL coinciden 0 por texto. Dos ausencias distintas del Torino (`n/a`, `n/d`). Diámetros en metros. |
 | `cruce` | JPL contra ESA | Dónde no coinciden las dos agencias | **175 objetos que la ESA lista fueron retirados por JPL**, algunos en 2020; el Palermo difiere más de ×10 en 292 de 1.974. |
 | `designacion` | — | Una clave para el mismo objeto escrito de cuatro formas | `6344 P-L` no es el asteroide 6344. |
+| `vigilancia` | Dos copias de Sentry y de la ESA | Qué cambió: nuevos, retirados, Palermo y Torino, con el antes y el después, en Markdown | Un sha256 distinto no dice qué cambió: en 31 minutos cambiaron las tres copias y en Sentry, 2 objetos de 2.239. **2026 VX1 subió en JPL y bajó en la ESA en la misma media hora.** |
+| `clima` | NOAA SWPC | Kp de 3 h (observado, estimado, pronosticado), escalas G/R/S y alertas | **La tormenta G1 empieza en Kp 4,67, no en 5**: un umbral ingenuo pierde 3 de 6 franjas. `estimated` puede ser futuro, y la clave `"1"` de las escalas es hoy. |
+| `herramientas` | Lo ya bajado | Seis preguntas como funciones que devuelven JSON con advertencias y sellos, listas para un servidor MCP | Cada respuesta dice lo que una cifra **no** es (TDB, diámetro estimado, Torino nulo). |
 
-Lo medido, con los sha256 y los números de cada trampa: [`docs/2026-11-06-neo-medicion.md`](docs/2026-11-06-neo-medicion.md).
+Lo medido, con los sha256 y los números de cada trampa: [`docs/2026-11-06-neo-medicion.md`](docs/2026-11-06-neo-medicion.md)
+y [`docs/2026-11-06-clima-y-vigilancia-medicion.md`](docs/2026-11-06-clima-y-vigilancia-medicion.md).
 
 ## Uso
 
@@ -30,7 +34,41 @@ python -m espaciodatos sentry resumen datos/sentry.json
 python -m espaciodatos sentry estado "2024 YR4"      # retirado el 2026-03-05 16:02:50 UTC
 python -m espaciodatos bolidos cerca datos/bolidos.json --lat -34.9 --lon -56.2 --radio 500
 python -m espaciodatos cruce datos/
+python -m espaciodatos vigilar copia-del-lunes/ copia-de-hoy/   # qué cambió, en Markdown
+python -m espaciodatos clima bajar datos/ && python -m espaciodatos clima resumen datos/
+python -m espaciodatos herramienta estado_de_un_objeto datos/ --param objeto="2014 ML67"
 ```
+
+## Para un servidor MCP
+
+`espaciodatos.herramientas` trae las preguntas ya resueltas; un servidor sólo las publica:
+
+```python
+from espaciodatos import herramientas
+
+herramientas.actualizar("cache/")                     # la única que sale a la red
+for nombre, h in herramientas.HERRAMIENTAS.items():   # nombre, descripción y parámetros
+    ...                                               # registrar h["funcion"] con su descripción
+herramientas.llamar("estado_de_un_objeto", "cache/", objeto=99942)
+```
+
+Cada respuesta tiene la forma `{"datos", "advertencias", "procedencia"}`. Para 2014 ML67:
+
+```json
+{"datos": {"clave": "2014 ML67", "jpl": null, "jpl_retirado_utc": "2021-08-09T16:58:35",
+           "esa": {"palermo_acumulado": -3.81, "probabilidad": 3.6e-07, "anios": [2027, 2124]}},
+ "advertencias": ["JPL lo retiró el 2021-08-09 (descartó todos sus impactos) y la ESA lo sigue listando: las agencias no coinciden."],
+ "procedencia": [{"fuente": "JPL Sentry 2.0", "sha256": "b6ea1954…", "bajado": "2026-11-06T16:35"}, …]}
+```
+
+| Herramienta | Qué contesta |
+|---|---|
+| `proximos_acercamientos` | Qué pasa cerca de la Tierra en los próximos días |
+| `riesgo_de_impacto` | Los objetos de mayor riesgo según JPL y según la ESA |
+| `estado_de_un_objeto` | Todo lo que se sabe de un objeto: listas, retiro y acercamientos |
+| `desacuerdos_entre_agencias` | Dónde no coinciden JPL y la ESA |
+| `bolidos_cerca` | Bólidos registrados cerca de un punto (por defecto, Uruguay) |
+| `clima_espacial` | Kp, tormentas próximas, escalas y alertas de NOAA |
 
 ```python
 from espaciodatos import cad, cruce, esa, sentry

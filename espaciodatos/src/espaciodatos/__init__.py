@@ -13,8 +13,11 @@ Módulos:
 - `esa`         — la lista de riesgo de la ESA (NEOCC), en texto de ancho fijo.
 - `cruce`       — dónde no coinciden la lista de JPL y la de la ESA.
 - `designacion` — una sola clave para el mismo objeto escrito de cuatro formas.
+- `vigilancia`  — qué cambió entre dos copias de las listas de riesgo, e informe en Markdown.
+- `clima`       — clima espacial de NOAA SWPC: Kp, escalas G/R/S y alertas.
+- `herramientas` — las preguntas de un agente como funciones que devuelven JSON con sellos.
 
-Lo medido está en `docs/2026-11-06-neo-medicion.md`.
+Lo medido está en `docs/2026-11-06-neo-medicion.md` y `docs/2026-11-06-clima-y-vigilancia-medicion.md`.
 """
 
 from __future__ import annotations

@@ -39,9 +39,17 @@ _COMETA = re.compile(r"^[PCDXI]/\d{4} [A-Z]{1,2}\d*(?:-[A-Z])?$")
 _NUMERADO = re.compile(r"^(\d+)(?:\s+(?:[A-Z][a-z][\w' -]*|\d{4}\s*[A-Z]{2}\d*)?\s*(?:\(\d{4} [A-Z]{2}\d*\))?)?$")
 
 
-def clave(texto: str) -> str:
+def clave(texto: str | int) -> str:
     """La clave de JPL para `texto`: `"443104"` o `"2008 JL3"` (y cometas o relevamientos tal
-    cual: `"P/2005 JQ5"`, `"6344 P-L"`). Levanta si no reconoce la forma."""
+    cual: `"P/2005 JQ5"`, `"6344 P-L"`). Levanta si no reconoce la forma.
+
+    Acepta un entero (`99942`): un cliente MCP o un JSON mandan el numerado como número."""
+    if isinstance(texto, bool) or not isinstance(texto, (str, int)):
+        raise DesignacionInvalida(f"{texto!r}: una designación es un texto o un número entero")
+    if isinstance(texto, int):
+        if texto <= 0:
+            raise DesignacionInvalida(f"{texto}: un numerado es positivo")
+        return str(texto)
     t = re.sub(r"\s+", " ", texto.strip())
     if t.startswith("(") and t.endswith(")"):
         t = t[1:-1].strip()

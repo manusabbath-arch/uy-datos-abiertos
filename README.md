@@ -50,8 +50,9 @@ lector conoce las trampas de su fuente, las documenta y levanta una excepción c
 
 En [`espaciodatos/`](espaciodatos/README.md), con la misma regla y la infraestructura de este
 paquete: acercamientos de asteroides a la Tierra (JPL), las listas de riesgo de impacto de JPL y
-de la ESA, bólidos (CNEOS), y **dónde no coinciden las dos agencias**: 175 objetos que la ESA
-todavía lista fueron retirados por JPL. Medido el 06/11/2026, con 20 trampas documentadas.
+de la ESA, bólidos (CNEOS), clima espacial (NOAA), y **dónde no coinciden las dos agencias**: 175 objetos
+que la ESA todavía lista fueron retirados por JPL. Con la vigilancia entre copias y seis
+herramientas en JSON listas para un servidor MCP. Medido el 06/11/2026.
 
 ## Instalación
 
