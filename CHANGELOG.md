@@ -2,6 +2,20 @@
 
 ## Sin publicar
 
+- **La fixture de sanciones perdió el nombre real de una empresa sancionada.** `9228b9e` cambió el
+  RUT de esa fila y dejó el nombre: la fila era un registro real del archivo del DSS (medido el
+  2026-11-17 contra el dataset público: mismo nombre, fecha, departamento, infracción y sanción).
+  Ahora la razón social y el nombre comercial son ficticios. El RUT real sigue en los sdists
+  publicados de 0.3.0 a 0.12.1 y el nombre en los de 0.14.0 a 0.17.0 (los wheels no traen tests);
+  eso lo resuelve una publicación, no un commit.
+- **La guarda de privacidad también mira cédulas.** `rut.es_ci_valida` ya validaba el dígito
+  verificador; faltaba aplicarlo sobre lo versionado. Tres guardas de ruido medidas el 2026-11-17:
+  una fecha `YYYYMMDD` pasa el DV por casualidad (una de cada diez), una corrida de 8 dígitos
+  dentro de un hash hexadecimal también, y `1.234.567-2` es el ejemplo publicado. Sin las tres, la
+  guarda marcaba 8 falsos positivos sobre 54 candidatos.
+- **El término de la lista privada tiene su caso plantado.** La forma genérica ya se probaba; ahora
+  `_hallazgos_en` se prueba con un término inventado, así el mecanismo no queda verde por vacío.
+
 - **`uydatos.red.pedir`: una lectura truncada se reintenta.** `http.client.IncompleteRead`
   no hereda de `OSError`, así que una descarga cortada salía del bucle de reintentos sin
   reintentar: el 2026-11-16 el archivo de compras de 27 MB llegó cortado y el cron de

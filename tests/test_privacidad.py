@@ -81,10 +81,8 @@ def test_ningun_archivo_versionado_cita_internos() -> None:
             texto = ruta.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue  # binario, o algo que no es texto: acá no hay nada que citar
-        for numero, linea in enumerate(texto.splitlines(), 1):
-            for patron, que_es in compiladas:
-                if patron.search(linea):
-                    hallazgos.append(f"  {ruta.relative_to(RAIZ)}:{numero}: {que_es}")
+        for numero, que_es in _hallazgos_en(texto, compiladas):
+            hallazgos.append(f"  {ruta.relative_to(RAIZ)}:{numero}: {que_es}")
     # El hallazgo dice el archivo, la línea y qué clase de interno es, pero no la línea: mostrarla en
     # la salida de un CI público sería publicar lo que se encontró.
     assert not hallazgos, "este paquete es público y hay internos en archivos versionados:\n" + "\n".join(hallazgos)
@@ -100,9 +98,59 @@ PERMITIDOS = {
     "219000000004",  # RUT sintético de las fixtures de sanciones (21 + ceros, DV 4)
 }
 
+# Cédulas con DV válido que están permitidas porque son inventadas.
+CIS_PERMITIDAS = {
+    "12345672",  # el ejemplo del README y de `rut.validar_ci` (1.234.567-2)
+}
+
+# Ni pegado a otros dígitos ni metido dentro de un hash hexadecimal: una corrida de 8 dígitos
+# adentro de `ae3d1ba4...` no es una cédula.
+OCHO_DIGITOS = re.compile(r"(?<![0-9a-fA-F])(\d{8})(?![0-9a-fA-F])")
+CI_PUNTEADA = re.compile(r"(?<![0-9a-fA-F])(\d{1}[.\-]\d{3}[.\-]\d{3}[.\-/]?\d)(?![0-9a-fA-F])")
+
 
 def _rut_validos(texto: str) -> list[str]:
     return [m.group(1) for m in DOCE_DIGITOS.finditer(texto) if rut.es_rut_valido(m.group(1))]
+
+
+def _parece_fecha(valor: str) -> bool:
+    """`YYYYMMDD` pasa el DV de cédula por casualidad, una de cada diez fechas.
+
+    Medido el 2026-11-17: sin esta guarda, `20261018` entraba como cédula válida y el guardián
+    se volvía ruido. Un documento real que coincida con una fecha se pierde: es el precio de que
+    el chequeo sirva en un repositorio lleno de fechas.
+    """
+    anio, mes, dia = int(valor[:4]), int(valor[4:6]), int(valor[6:])
+    return 1900 <= anio <= 2100 and 1 <= mes <= 12 and 1 <= dia <= 31
+
+
+def _ci_validas(texto: str) -> list[str]:
+    """Cédulas con DV válido en la línea, cada una una sola vez.
+
+    El algoritmo no se reimplementa acá: `rut.es_ci_valida` ya lo tiene, con vector publicado
+    (`1.234.567-2` válida, `1.234.567-3` no).
+    """
+    vistas: dict[str, None] = {}
+    for patron in (OCHO_DIGITOS, CI_PUNTEADA):
+        for match in patron.finditer(texto):
+            valor = re.sub(r"\D", "", match.group(1))
+            if valor in CIS_PERMITIDAS or valor in vistas:
+                continue
+            if patron is OCHO_DIGITOS and _parece_fecha(valor):
+                continue
+            if rut.es_ci_valida(valor):
+                vistas[valor] = None
+    return list(vistas)
+
+
+def _hallazgos_en(texto: str, compiladas: list[tuple[re.Pattern[str], str]]) -> list[tuple[int, str]]:
+    """`(línea, qué es)` por cada forma que aparece. Separado para poder probarlo plantado."""
+    return [
+        (numero, que_es)
+        for numero, linea in enumerate(texto.splitlines(), 1)
+        for patron, que_es in compiladas
+        if patron.search(linea)
+    ]
 
 
 def test_el_guardian_ve_un_rut_plantado():
@@ -131,3 +179,52 @@ def test_ningun_archivo_versionado_tiene_un_rut_valido():
                 if valor not in PERMITIDOS:
                     hallazgos.append(f"  {ruta.relative_to(RAIZ)}:{numero}: un RUT con dígito válido")
     assert not hallazgos, "hay un RUT con dígito válido en un archivo versionado:\n" + "\n".join(hallazgos)
+
+
+def test_el_guardian_ve_un_termino_local_plantado():
+    """La lista privada vive fuera del repo; igual tiene que morder si aparece."""
+    compiladas = [(re.compile(r"proyecto-interno"), "un nombre de un proyecto privado")]
+
+    assert _hallazgos_en("primera línea\nacá dice proyecto-interno\n", compiladas) == [
+        (2, "un nombre de un proyecto privado")
+    ]
+    assert _hallazgos_en("nada que ver", compiladas) == []
+
+
+def test_el_guardian_ve_una_ci_plantada():
+    assert _ci_validas("titular;1.111.111-1;MONTEVIDEO") == ["11111111"]
+    assert _ci_validas("titular;11111111;MONTEVIDEO") == ["11111111"]
+
+
+def test_una_ci_con_dv_invalido_no_es_un_hallazgo():
+    assert _ci_validas("titular;1.234.567-3;MONTEVIDEO") == []
+
+
+def test_el_ejemplo_documentado_no_es_un_hallazgo():
+    assert _ci_validas('validar_ci("1.234.567-2")') == []
+
+
+def test_una_fecha_no_se_confunde_con_una_ci():
+    """`20261018` tiene DV válido por casualidad; sin esto el guardián era ruido."""
+    assert _ci_validas("medido el 2026-10-18") == []
+    assert _ci_validas("fecha 20261018") == []
+
+
+def test_una_corrida_de_digitos_en_un_hash_no_es_una_ci():
+    assert _ci_validas('sha = "ae3d1ba4111111111f8c"') == []
+
+
+def test_ningun_archivo_versionado_tiene_una_ci_valida():
+    """La guarda no publica lo que protege: dice archivo y línea, nunca el número."""
+    hallazgos = []
+    for ruta in archivos_versionados():
+        if ruta == ESTE or not ruta.is_file() or ruta.suffix.lower() in {".lock"}:
+            continue
+        try:
+            texto = ruta.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for numero, linea in enumerate(texto.splitlines(), 1):
+            if _ci_validas(linea):
+                hallazgos.append(f"  {ruta.relative_to(RAIZ)}:{numero}: una cédula con DV válido")
+    assert not hallazgos, "hay una cédula con DV válido en un archivo versionado:\n" + "\n".join(hallazgos)
