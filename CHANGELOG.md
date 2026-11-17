@@ -2,6 +2,16 @@
 
 ## Sin publicar
 
+- **`uydatos.red.pedir`: una lectura truncada se reintenta.** `http.client.IncompleteRead`
+  no hereda de `OSError`, así que una descarga cortada salía del bucle de reintentos sin
+  reintentar: el 2026-11-16 el archivo de compras de 27 MB llegó cortado y el cron de
+  `mcp-uruguay` se cayó (`mcp-uruguay` ya lo atrapaba en su propia capa; la biblioteca no).
+  Ahora se atrapa `http.client.HTTPException` igual que un error de red y el mensaje final
+  nombra la causa.
+  - Deuda medida, fuera de este cambio: el cuerpo se lee entero en memoria. 27 MB de
+    archivo dan 27 MB de pico (`tracemalloc`, `pedir` y `bajar`); streaming lo bajaría a un
+    chunk.
+
 ## 0.17.0 — 2026-10-27
 
 - **`uydatos.ina`: nivel y caudal del río Uruguay**, del sistema de alerta del INFORM de la

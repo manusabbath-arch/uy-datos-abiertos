@@ -11,6 +11,7 @@ segundos segun el archivo. Un servidor que bloquee `Python-urllib` bloqueaba una
 from __future__ import annotations
 
 import argparse
+import http.client
 import sys
 import time
 import urllib.error
@@ -64,7 +65,7 @@ def pedir(
     """Devuelve el cuerpo de la respuesta. Reintenta 3 veces lo que puede mejorar solo.
 
     Un 4xx **no** se reintenta: la URL o el recurso estan mal y esperar no los arregla. Todo lo
-    demas (5xx, DNS, corte de conexion) se reintenta con una espera creciente.
+    demas (5xx, DNS, corte de conexion, lectura truncada) se reintenta con una espera creciente.
     """
     req = pedido(url, datos=datos, cabeceras=cabeceras)
     ultimo: Optional[Exception] = None
@@ -79,6 +80,12 @@ def pedir(
                 raise OSError(f"{url}: el servidor respondio {e.code} {e.reason}") from e
             ultimo = e
         except OSError as e:
+            ultimo = e
+        except http.client.HTTPException as e:
+            # `HTTPException` NO hereda de `OSError`. Una descarga truncada levanta
+            # `IncompleteRead` y salia del bucle sin reintentar: el 2026-11-16 tumbo el
+            # cron de mcp-uruguay con el archivo de compras de 27 MB. El mensaje final
+            # incluye `ultimo`, asi que nombra la causa.
             ultimo = e
     raise OSError(f"{url}: {ultimo} (tras {INTENTOS} intentos)")
 
