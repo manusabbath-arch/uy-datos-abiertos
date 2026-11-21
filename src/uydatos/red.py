@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import http.client
 import os
+import secrets
 import sys
 import time
 import urllib.error
@@ -100,6 +101,23 @@ def pedir(
     return _con_reintentos(lo_pide, url)
 
 
+def _publicar(parcial: Path, destino: Path) -> None:
+    """`os.replace` con reintentos: en Windows falla con `PermissionError` si otro hilo o proceso
+    estaba reemplazando el mismo destino justo ahora. Si aun así no se puede y ya hay una copia del
+    mismo tamaño, esa la publicó otro con los mismos bytes y el parcial propio se descarta."""
+    for intento in range(6):
+        try:
+            os.replace(parcial, destino)
+            return
+        except PermissionError:
+            if intento == 5:
+                if destino.exists() and destino.stat().st_size == parcial.stat().st_size:
+                    parcial.unlink(missing_ok=True)
+                    return
+                raise
+            time.sleep(0.05 * (intento + 1))
+
+
 def bajar(url: str, destino: Path, *, timeout: int = TIMEOUT_DESCARGA) -> Path:
     """Baja a `destino`, creando las carpetas que falten. **Una respuesta vacia no se escribe.**
 
@@ -111,7 +129,9 @@ def bajar(url: str, destino: Path, *, timeout: int = TIMEOUT_DESCARGA) -> Path:
     """
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    parcial = destino.parent / f".{destino.name}.parcial"
+    # El temporal lleva sufijo propio: con un nombre fijo (`.<archivo>.parcial`), dos bajadas del
+    # mismo destino a la vez escriben el mismo archivo y una publica la copia mezclada de las dos.
+    parcial = destino.parent / f".{destino.name}.{secrets.token_hex(4)}.parcial"
 
     def lo_baja() -> int:
         total = 0
@@ -130,7 +150,7 @@ def bajar(url: str, destino: Path, *, timeout: int = TIMEOUT_DESCARGA) -> Path:
         parcial.unlink(missing_ok=True)
         raise OSError(f"{url}: la respuesta vino vacia; no se escribio nada")
     try:
-        os.replace(parcial, destino)
+        _publicar(parcial, destino)
     except OSError:
         parcial.unlink(missing_ok=True)
         raise

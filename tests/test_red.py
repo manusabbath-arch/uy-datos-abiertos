@@ -188,6 +188,47 @@ class TestBajar:
         assert destino.read_bytes() == cuerpo
         assert pico < 1024 * 1024  # menos de un tercio del cuerpo; la bajada entera en memoria daba >= 3 MiB
 
+    def test_dos_bajadas_a_la_vez_no_publican_un_archivo_mezclado(self, monkeypatch, tmp_path):
+        """El parcial era `.<destino>.parcial`: dos bajadas al mismo destino compartían el temporal."""
+        import threading
+        from concurrent.futures import ThreadPoolExecutor
+
+        barrera = threading.Barrier(2, timeout=10)
+
+        class _EnDosTandas(_Respuesta):
+            def __init__(self, trozos):
+                self._trozos, self._i = trozos, 0
+
+            def read(self, n=None) -> bytes:
+                if self._i >= len(self._trozos):
+                    return b""
+                trozo = self._trozos[self._i]
+                self._i += 1
+                if self._i == 2:  # entre la primera tanda y la segunda, el otro escribe la suya
+                    barrera.wait()
+                return trozo
+
+        letras = iter("AB")
+        tandas = {"A": [b"A" * 400, b"A" * 400], "B": [b"B" * 400, b"B" * 100]}
+        monkeypatch.setattr(red, "_abrir", lambda pedido, timeout: _EnDosTandas(tandas[next(letras)]))
+        destino = tmp_path / "x.csv"
+        una, otra = b"A" * 800, b"B" * 500
+
+        def bajar(_):
+            try:
+                red.bajar("https://ejemplo.uy/x", destino)
+            except Exception as e:  # noqa: BLE001 - el fallo es lo que se está midiendo
+                return e
+            return None
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            salidas = list(pool.map(bajar, range(2)))
+        assert all(s is None for s in salidas), salidas
+        # Se lee recién cuando los dos terminaron: en Windows, leer mientras el otro hace el
+        # `os.replace` es un `PermissionError` del sistema, no una copia mezclada.
+        assert destino.read_bytes() in {una, otra}
+        assert list(tmp_path.iterdir()) == [destino]  # tampoco quedan parciales
+
     def test_bajar_que_falla_no_deja_archivo_ni_parcial(self, monkeypatch, tmp_path):
         """El `destino` nunca queda parcial: se baja a un temporal en la misma
         carpeta y se publica con `os.replace` solo si la bajada salio entera."""

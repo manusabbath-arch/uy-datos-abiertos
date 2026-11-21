@@ -1,5 +1,20 @@
 # Cambios
 
+## 0.18.0 — 2026-11-21
+
+- **Descargas concurrentes: cada una a su propio parcial.** `red.bajar` ya publicaba con
+  `os.replace`, pero el temporal se llamaba `.<archivo>.parcial`: dos bajadas del mismo destino a la
+  vez escribían el mismo archivo y una publicaba la copia mezclada de las dos, o fallaba con
+  `FileNotFoundError` porque la otra se lo había llevado. Ahora el nombre lleva un sufijo propio.
+  Test de dos hilos con una barrera entre tandas: en rojo contra 0.17.3.
+- **`uydatos.calidad`: marcas de calidad de una serie de sensores.** `marcar()` devuelve una marca
+  por lectura (`ok`, `rango`, `plano`, `salto`, `sin_dato`) con las cuatro pruebas de QARTOD: fuera
+  de los límites de la fuente, el mismo valor `repeticiones` veces seguidas (sensor trabado), un
+  cambio mayor que `max_salto`, o el dato que falta. No corrige ni interpola: marca, y quien
+  responde decide qué hacer. Los límites son explícitos por fuente —no hay un rango universal— y
+  `sugerir_limites()` da un punto de partida medido sobre la propia serie, para revisar a mano.
+  `resumen()` cuenta cada marca con las cinco claves siempre presentes: un cero es información.
+
 ## 0.17.3 — 2026-11-21
 
 - **Lector nuevo `uydatos.censo`: la población oficial del Censo 2023.** Lee los tabulados XLSX del
