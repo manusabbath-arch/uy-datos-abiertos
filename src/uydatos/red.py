@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import http.client
 import os
+import secrets
 import sys
 import time
 import urllib.error
@@ -111,7 +112,9 @@ def bajar(url: str, destino: Path, *, timeout: int = TIMEOUT_DESCARGA) -> Path:
     """
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    parcial = destino.parent / f".{destino.name}.parcial"
+    # El temporal lleva sufijo propio: con un nombre fijo (`.<archivo>.parcial`), dos bajadas del
+    # mismo destino a la vez escriben el mismo archivo y una publica la copia mezclada de las dos.
+    parcial = destino.parent / f".{destino.name}.{secrets.token_hex(4)}.parcial"
 
     def lo_baja() -> int:
         total = 0
