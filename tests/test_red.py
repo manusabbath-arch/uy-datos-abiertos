@@ -212,18 +212,20 @@ class TestBajar:
         tandas = {"A": [b"A" * 400, b"A" * 400], "B": [b"B" * 400, b"B" * 100]}
         monkeypatch.setattr(red, "_abrir", lambda pedido, timeout: _EnDosTandas(tandas[next(letras)]))
         destino = tmp_path / "x.csv"
+        una, otra = b"A" * 800, b"B" * 500
 
         def bajar(_):
             try:
                 red.bajar("https://ejemplo.uy/x", destino)
             except Exception as e:  # noqa: BLE001 - el fallo es lo que se está midiendo
                 return e
-            return destino.read_bytes()
+            return None
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             salidas = list(pool.map(bajar, range(2)))
-        assert all(isinstance(o, bytes) for o in salidas), salidas
-        una, otra = b"A" * 800, b"B" * 500
+        assert all(s is None for s in salidas), salidas
+        # Se lee recién cuando los dos terminaron: en Windows, leer mientras el otro hace el
+        # `os.replace` es un `PermissionError` del sistema, no una copia mezclada.
         assert destino.read_bytes() in {una, otra}
         assert list(tmp_path.iterdir()) == [destino]  # tampoco quedan parciales
 
