@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 0.17.1 — 2026-11-21
 
 - **La fixture de sanciones perdió el nombre real de una empresa sancionada.** `9228b9e` cambió el
   RUT de esa fila y dejó el nombre: la fila era un registro real del archivo del DSS (medido el
