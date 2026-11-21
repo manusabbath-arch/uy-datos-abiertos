@@ -2,6 +2,15 @@
 
 ## Sin publicar
 
+- **Lector nuevo `uydatos.censo`: la población oficial del Censo 2023.** Lee los tabulados XLSX del
+  INE: el cuadro 12 (19 departamentos, con área) y el 13 (660 localidades con código de 5 dígitos).
+  Son datos ponderados y difieren de la capa cartográfica que lee `uydatos.limites` (Salto 112.527
+  contra 114.043; Paysandú ciudad 79.457 contra 81.489), y reflejan la corrección del INE de mayo
+  de 2026 (Paysandú departamento 121.838; el comunicado de resultados finales decía 121.843). La fila
+  `Total` del cuadro 13 se compara con la suma de las localidades y el archivo se rechaza si no
+  cierra. Motivo: la eval de mcp-uruguay falló tres corridas seguidas en las dos preguntas de
+  población porque la única cifra disponible era la de la capa.
+
 - **`uydatos.red.bajar` va en streaming: 27 MB de archivo ya no son 27 MB de pico.** El cuerpo se
   escribe en trozos a un temporal en la misma carpeta y se publica con `os.replace` solo si la
   bajada sale entera: nunca queda un `destino` parcial, el temporal se limpia si los reintentos
