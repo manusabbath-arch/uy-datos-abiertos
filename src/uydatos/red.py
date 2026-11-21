@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import http.client
+import os
 import sys
 import time
 import urllib.error
@@ -26,6 +27,7 @@ TIMEOUT = 60
 TIMEOUT_DESCARGA = 180
 INTENTOS = 3
 ESPERA = 2.0
+CHUNK = 64 * 1024  # el pico de una bajada: un trozo mas el buffer, nunca el archivo entero
 
 
 def _abrir(pedido: urllib.request.Request, timeout: int):
@@ -55,26 +57,21 @@ def codificar(params: dict[str, str]) -> str:
     return urllib.parse.urlencode(params)
 
 
-def pedir(
-    url: str,
-    *,
-    datos: Optional[bytes] = None,
-    cabeceras: Optional[dict[str, str]] = None,
-    timeout: int = TIMEOUT,
-) -> bytes:
-    """Devuelve el cuerpo de la respuesta. Reintenta 3 veces lo que puede mejorar solo.
+def _con_reintentos(lo_que_intenta, url: str):
+    """El bucle comun de reintentos: `lo_que_intenta()` consume la respuesta.
 
     Un 4xx **no** se reintenta: la URL o el recurso estan mal y esperar no los arregla. Todo lo
     demas (5xx, DNS, corte de conexion, lectura truncada) se reintenta con una espera creciente.
+    `http.client.HTTPException` (la lectura truncada, `IncompleteRead`) **no** hereda de `OSError`
+    y se atrapa aparte: el 2026-11-16 tumbo el cron de `mcp-uruguay` con el archivo de compras de
+    27 MB. El mensaje final incluye `ultimo`, asi que nombra la causa.
     """
-    req = pedido(url, datos=datos, cabeceras=cabeceras)
     ultimo: Optional[Exception] = None
     for intento in range(INTENTOS):
         if intento:
             time.sleep(ESPERA * intento)
         try:
-            with _abrir(req, timeout) as r:
-                return r.read()
+            return lo_que_intenta()
         except urllib.error.HTTPError as e:
             if 400 <= e.code < 500:
                 raise OSError(f"{url}: el servidor respondio {e.code} {e.reason}") from e
@@ -82,22 +79,61 @@ def pedir(
         except OSError as e:
             ultimo = e
         except http.client.HTTPException as e:
-            # `HTTPException` NO hereda de `OSError`. Una descarga truncada levanta
-            # `IncompleteRead` y salia del bucle sin reintentar: el 2026-11-16 tumbo el
-            # cron de mcp-uruguay con el archivo de compras de 27 MB. El mensaje final
-            # incluye `ultimo`, asi que nombra la causa.
             ultimo = e
     raise OSError(f"{url}: {ultimo} (tras {INTENTOS} intentos)")
 
 
+def pedir(
+    url: str,
+    *,
+    datos: Optional[bytes] = None,
+    cabeceras: Optional[dict[str, str]] = None,
+    timeout: int = TIMEOUT,
+) -> bytes:
+    """Devuelve el cuerpo de la respuesta. Reintenta lo que puede mejorar solo (ver `_con_reintentos`)."""
+    req = pedido(url, datos=datos, cabeceras=cabeceras)
+
+    def lo_pide() -> bytes:
+        with _abrir(req, timeout) as r:
+            return r.read()
+
+    return _con_reintentos(lo_pide, url)
+
+
 def bajar(url: str, destino: Path, *, timeout: int = TIMEOUT_DESCARGA) -> Path:
-    """Baja a `destino`, creando las carpetas que falten. **Una respuesta vacia no se escribe.**"""
+    """Baja a `destino`, creando las carpetas que falten. **Una respuesta vacia no se escribe.**
+
+    El cuerpo se escribe en trozos a un temporal en la misma carpeta, y el temporal se publica
+    con `os.replace` solo si la bajada salio entera: nunca queda un `destino` parcial (el corte
+    del 2026-11-16 no debe dejar un archivo que parezca bueno) y el pico de memoria es un trozo,
+    no el archivo. Medido el 2026-11-21 con un cuerpo de 27 MB: `pedir` pica 27.1 MiB y `bajar`
+    134 KB (207x menos). `pedir` mantiene su pico: su contrato devuelve el cuerpo entero.
+    """
     destino = Path(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    cuerpo = pedir(url, timeout=timeout)
-    if not cuerpo:
+    parcial = destino.parent / f".{destino.name}.parcial"
+
+    def lo_baja() -> int:
+        total = 0
+        with _abrir(pedido(url), timeout=timeout) as r, open(parcial, "wb") as f:
+            while trozo := r.read(CHUNK):
+                f.write(trozo)
+                total += len(trozo)
+        return total
+
+    try:
+        total = _con_reintentos(lo_baja, url)
+    except OSError:
+        parcial.unlink(missing_ok=True)
+        raise
+    if not total:
+        parcial.unlink(missing_ok=True)
         raise OSError(f"{url}: la respuesta vino vacia; no se escribio nada")
-    destino.write_bytes(cuerpo)
+    try:
+        os.replace(parcial, destino)
+    except OSError:
+        parcial.unlink(missing_ok=True)
+        raise
     return destino
 
 
