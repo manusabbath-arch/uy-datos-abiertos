@@ -36,6 +36,6 @@ Módulos:
 - `errores`      — la base común de los rechazos: `DatosInvalidos`, que atrapa a los diecinueve.
 """
 
-__version__ = "0.17.1"
+__version__ = "0.17.2"
 
 USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"

@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.17.2 — 2026-11-21
+
+- **El sdist ya no viaja con `tests/`.** Cierre de la clase que motivó la purga: mientras los
+  tests iban dentro del sdist, cualquier fixture real se publicaba aunque el HEAD estuviera
+  limpio (`docs/2026-11-17-purga-datos-de-terceros.md`). La guarda de privacidad sigue corriendo
+  sobre el árbol versionado; la excepción que la declaraba «saltada en un sdist» ya no hace
+  falta porque el sdist directamente no la lleva.
+
 ## 0.17.1 — 2026-11-21
 
 - **La fixture de sanciones perdió el nombre real de una empresa sancionada.** `9228b9e` cambió el
