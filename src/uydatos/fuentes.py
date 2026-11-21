@@ -175,6 +175,18 @@ FUENTES: dict[str, Fuente] = {
             "versiones viejas a la primera consulta del día."
         ),
     },
+    "censo": {
+        "lector": "censo",
+        "tipo": "url",
+        "datasets": (),
+        "recurso": None,
+        "medido": "2026-11-21",
+        "trampa": (
+            "Datos ponderados: la capa de localidades trae otra cifra para la misma localidad (Salto "
+            "112.527 acá, 114.043 en la capa), y las localidades de un departamento no suman su fila "
+            "del cuadro 12 por una o dos personas. El INE corrigió las cifras en mayo de 2026."
+        ),
+    },
     "limites": {
         "lector": "limites",
         "tipo": "url",

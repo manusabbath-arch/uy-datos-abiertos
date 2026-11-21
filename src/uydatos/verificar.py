@@ -32,6 +32,7 @@ from uydatos import (
     ancap_ventas,
     bcu,
     catalogo,
+    censo,
     compras,
     elecciones,
     errores,
@@ -105,6 +106,12 @@ def _de_bcu(d: Path) -> dict:
     mes = f"{ayer.year}-{ayer.month:02d}"
     bcu.descargar(9800, mes, mes, d)  # 9800 = Unidad Indexada
     return {"ruta": d, **_serie(bcu.leer_serie(d, 9800))}
+
+
+def _de_censo(d: Path) -> dict:
+    """El cuadro 13 (localidades): con la fila Total incluida en el contrato, es el más exigente."""
+    ruta = censo.descargar("localidades", d / "censo_localidades.xlsx")
+    return {"ruta": ruta, **_forma(censo.leer_localidades(ruta))}
 
 
 def _de_compras(d: Path) -> dict:
@@ -196,6 +203,7 @@ VERIFICAR: dict[str, Callable[[Path], dict]] = {
     "ancap": _de_ancap,
     "ancap_ventas": _de_ancap_ventas,
     "bcu": _de_bcu,
+    "censo": _de_censo,
     "compras": _de_compras,
     "elecciones": _de_elecciones,
     "ibge": _de_ibge,
