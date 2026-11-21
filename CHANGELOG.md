@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- **`uydatos.red.bajar` va en streaming: 27 MB de archivo ya no son 27 MB de pico.** El cuerpo se
+  escribe en trozos a un temporal en la misma carpeta y se publica con `os.replace` solo si la
+  bajada sale entera: nunca queda un `destino` parcial, el temporal se limpia si los reintentos
+  se agotan, y una respuesta vacia no se escribe como antes. Medido con el archivo de compras de
+  27 MB (tracemalloc): el pico de `bajar` bajo de 27.1 MiB a 134 KB (207x); el de `pedir` sigue
+  en 27.1 MiB porque su contrato devuelve el cuerpo entero. La fake de tests aprendio el contrato
+  real de `HTTPResponse.read(n)`: consume, da trozos hasta el vacio.
+
 ## 0.17.2 — 2026-11-21
 
 - **El sdist ya no viaja con `tests/`.** Cierre de la clase que motivó la purga: mientras los

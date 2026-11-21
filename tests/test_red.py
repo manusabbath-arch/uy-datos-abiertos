@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import http.client
+import tracemalloc
 import urllib.error
 
 import pytest
@@ -13,8 +14,14 @@ from uydatos import USER_AGENT, red
 class _Respuesta:
     def __init__(self, datos: bytes):
         self._datos = datos
+        self._leido = False
 
-    def read(self) -> bytes:
+    def read(self, n=None) -> bytes:
+        # `HTTPResponse.read(n)` consume: con `n=None` da el cuerpo entero una vez
+        # y luego vacio; con `n` entrega trozos. La fake imita ese contrato.
+        if self._leido:
+            return b""
+        self._leido = True
         return self._datos
 
     def __enter__(self):
@@ -93,7 +100,7 @@ class TestReintentos:
         intentos = []
 
         class _Cortada(_Respuesta):
-            def read(self) -> bytes:
+            def read(self, n=None) -> bytes:
                 raise http.client.IncompleteRead(b"parcial", 10)
 
         def abrir(pedido, timeout):
@@ -109,7 +116,7 @@ class TestReintentos:
 
     def test_si_todas_las_lecturas_se_truncan_el_error_nombra_la_causa(self, monkeypatch):
         class _Cortada(_Respuesta):
-            def read(self) -> bytes:
+            def read(self, n=None) -> bytes:
                 raise http.client.IncompleteRead(b"parcial", 10)
 
         monkeypatch.setattr(red, "_abrir", lambda pedido, timeout: _Cortada(b""))
@@ -135,7 +142,7 @@ class TestBajar:
         intentos = []
 
         class _Cortada(_Respuesta):
-            def read(self) -> bytes:
+            def read(self, n=None) -> bytes:
                 raise http.client.IncompleteRead(b"parcial", 10)
 
         def abrir(pedido, timeout):
@@ -148,3 +155,50 @@ class TestBajar:
         monkeypatch.setattr(red.time, "sleep", lambda s: None)
         destino = red.bajar("https://ejemplo.uy/x", tmp_path / "compras.csv")
         assert destino.read_bytes() == b"a;b\n1;2\n"
+
+    def test_una_bajada_grande_no_pasa_el_cuerpo_por_memoria(self, monkeypatch, tmp_path):
+        """Medido el 2026-11-16 con `pedir` y `bajar`: 27 MB de archivo dan 27 MB de
+        pico. `bajar` escribe en trozos: el pico queda en un trozo y el buffer, no
+        en el archivo entero. El contenido de la fake se preasigna antes de trazar
+        para que los trozos no cuenten en la medicion."""
+        trozos = [b"x" * red.CHUNK for _ in range(48)]  # 48 * 64 KiB = 3 MiB
+        cuerpo = b"".join(trozos)
+
+        class _EnTrozos:
+            def __init__(self, trozos):
+                self._trozos = list(trozos)
+
+            def read(self, n=None) -> bytes:
+                return self._trozos.pop(0) if self._trozos else b""
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        monkeypatch.setattr(red, "_abrir", lambda pedido, timeout: _EnTrozos(trozos))
+        destino = tmp_path / "grande.csv"
+        tracemalloc.start()
+        try:
+            red.bajar("https://ejemplo.uy/x", destino)
+            pico = tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+        assert destino.read_bytes() == cuerpo
+        assert pico < 1024 * 1024  # menos de un tercio del cuerpo; la bajada entera en memoria daba >= 3 MiB
+
+    def test_bajar_que_falla_no_deja_archivo_ni_parcial(self, monkeypatch, tmp_path):
+        """El `destino` nunca queda parcial: se baja a un temporal en la misma
+        carpeta y se publica con `os.replace` solo si la bajada salio entera."""
+
+        class _CortadaSiempre(_Respuesta):
+            def read(self, n=None) -> bytes:
+                raise http.client.IncompleteRead(b"parcial", 10)
+
+        monkeypatch.setattr(red, "_abrir", lambda pedido, timeout: _CortadaSiempre(b""))
+        monkeypatch.setattr(red.time, "sleep", lambda s: None)
+        with pytest.raises(OSError, match="IncompleteRead"):
+            red.bajar("https://ejemplo.uy/x", tmp_path / "compras.csv")
+        assert not (tmp_path / "compras.csv").exists()
+        assert list(tmp_path.iterdir()) == []  # tampoco queda el temporal
