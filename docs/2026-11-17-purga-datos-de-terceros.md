@@ -94,5 +94,14 @@ Si además se quiere que el historial de git deje de mostrarlo, la Opción A que
 
 El dato llegó por las fixtures de `tests/`, que viajan en el sdist. Mientras el sdist incluya
 `tests/`, cualquier fixture real vuelve a publicarse aunque `HEAD` esté limpio. Excluir `tests/` del
-sdist cierra esa clase; no se hizo porque cambia cómo se empaqueta el proyecto y la guarda de
-privacidad ya se declara "saltada en un sdist" a propósito. Decisión del dueño.
+sdist cierra esa clase.
+
+Ejecutado el 2026-11-21:
+- publicada la `0.17.1` limpia; su sha256 verificado contra el índice simple de PyPI.
+- borradas en PyPI las 16 versiones de los rangos declarados y también `0.2.1` (fuera de los
+  rangos, el dueño la incluyó): el índice simple queda con una sola versión viva, `0.17.1`, y
+  `pip download uydatos==0.17.1` resuelve. Como PyPI no reutiliza números de versión, la
+  siguiente es `0.17.2`.
+- el sdist ya no viaja con `tests/` (hatchling, `exclude = ["tests"]` en `pyproject.toml`, desde
+  `0.17.2`): la clase queda cerrada. La guarda de privacidad corre sobre el árbol versionado, y
+  su excepción «saltada en un sdist» ya no aplica porque no se publica.
