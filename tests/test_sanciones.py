@@ -49,7 +49,7 @@ def test_url_vigente_rechaza_si_hay_dos_csv(monkeypatch):
 ENCABEZADO = "razon_social;nombre_comercial;rut;departamento;fecha_resolucion;motivo_sancion;tipo_sancion;monto_ur"
 
 FILAS = [
-    "A PURA MANO LTDA;NUEVA ESTAMPA;219000000004    ;MONTEVIDEO;31/5/2018;Precio no informado;Apercibimiento;0",
+    "EMPRESA DE PRUEBA LTDA;MARCA DE PRUEBA;219000000004    ;MONTEVIDEO;31/5/2018;Precio no informado;Apercibimiento;0",
     "PANADERIA ÑANDU;LA ÑANDU;210000000018;SALTO;20/7/2018;Publicidad engañosa;Multa;120",
     "OTRA SA;;123;CANELONES;21/10/2024;Incomparecencia;Multa;30",
 ]
@@ -63,7 +63,7 @@ def _escribir(p: Path) -> Path:
 def test_lee_las_filas_tal_cual(tmp_path):
     filas = sanciones.leer(_escribir(tmp_path / "s.csv"))
     assert len(filas) == 3
-    assert filas[0]["razon_social"] == "A PURA MANO LTDA"
+    assert filas[0]["razon_social"] == "EMPRESA DE PRUEBA LTDA"
     assert filas[1]["razon_social"] == "PANADERIA ÑANDU"  # cp1252, no UTF-8
     assert filas[0]["fecha"] == date(2018, 5, 31)
 
