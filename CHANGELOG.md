@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 0.17.3 — 2026-11-21
 
 - **Lector nuevo `uydatos.censo`: la población oficial del Censo 2023.** Lee los tabulados XLSX del
   INE: el cuadro 12 (19 departamentos, con área) y el 13 (660 localidades con código de 5 dígitos).
