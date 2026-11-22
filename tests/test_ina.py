@@ -300,3 +300,28 @@ def test_red_metadata_de_concordia_es_la_del_rio_y_no_la_de_brasil():
     assert m["estacion_id"] == 79 and m["pais"] == "Argentina" and m["nivel_alerta"] == 11
     assert m["red"] == "escalas Prefectura Nacional"
     assert m["var"] == "H" and m["unidad"] == "m"
+
+
+@pytest.mark.parametrize(
+    "instante, acepta",
+    [
+        ("2019-12-01T03:00:00.000Z", True),  # 00:00 UY del primer día: dentro
+        ("2019-12-01T02:59:59.000Z", False),  # 23:59:59 UY del día anterior: fuera
+        ("2020-01-01T00:00:00.000Z", True),  # 21:00 UY del último día: dentro (en UTC ya es el día siguiente)
+        ("2020-01-01T02:59:59.000Z", True),  # 23:59:59 UY del último día: dentro
+        ("2020-01-01T03:00:00.000Z", False),  # 00:00 UY del día siguiente: fuera
+    ],
+)
+def test_el_rango_pedido_se_valida_en_hora_de_uruguay_como_la_url(tmp_path, instante, acepta):
+    """La URL pide en -03:00; validar en UTC rechazaba lecturas legítimas del último día.
+
+    Medido: Salto Grande Abajo H falla en las ventanas 2016-03..06 y 2020-01 con
+    'el API no está respetando el filtro'.
+    """
+    fila = f"1,puntual,79,{instante},{instante},upsertObservacionesPuntual,,,2020-01-02T10:00:00.000Z,5.5"
+    p = _archivo(tmp_path / "x.csv", 79, filas=[fila])
+    if acepta:
+        assert len(ina.observaciones(79, date(2019, 12, 1), date(2019, 12, 31), crudo=p)) == 1
+    else:
+        with pytest.raises(InaInvalido, match="fuera del rango pedido"):
+            ina.observaciones(79, date(2019, 12, 1), date(2019, 12, 31), crudo=p)

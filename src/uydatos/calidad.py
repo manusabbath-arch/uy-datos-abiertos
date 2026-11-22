@@ -93,12 +93,15 @@ def resumen(marcas: Sequence[str]) -> dict[str, int]:
     return conteo
 
 
-def sugerir_limites(valores: Sequence[Optional[float]], *, margen: float = 0.5, k: float = 6.0) -> dict:
+def sugerir_limites(
+    valores: Sequence[Optional[float]], *, margen: float = 0.5, k: float = 6.0, piso: Optional[float] = None
+) -> dict:
     """Un punto de partida para `minimo`, `maximo` y `max_salto`, medido sobre la propia serie.
 
     `minimo` y `maximo` son el rango observado estirado un `margen` (0.5 = 50% para cada lado), y
     `max_salto` es `k` veces el salto tipico (la mediana de los cambios consecutivos, que no se deja
-    arrastrar por los picos que justamente se quieren marcar).
+    arrastrar por los picos que justamente se quieren marcar). `piso` es el minimo fisico del parametro
+    (un caudal no baja de 0): el estirado no lo cruza.
 
     **Es para revisar a mano, no para usar sin mirar**: una serie que ya viene trabada sugiere
     limites que dan por bueno el sensor trabado.
@@ -110,8 +113,11 @@ def sugerir_limites(valores: Sequence[Optional[float]], *, margen: float = 0.5, 
     amplitud = alto - bajo
     saltos = [abs(b - a) for a, b in zip(validos, validos[1:]) if b != a]
     tipico = median(saltos) if saltos else 0.0
+    minimo = bajo - amplitud * margen
+    if piso is not None:
+        minimo = max(minimo, piso)
     return {
-        "minimo": round(bajo - amplitud * margen, 4),
+        "minimo": round(minimo, 4),
         "maximo": round(alto + amplitud * margen, 4),
         "max_salto": round(tipico * k, 4) if tipico else None,
         "lecturas": len(validos),

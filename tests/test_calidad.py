@@ -99,3 +99,15 @@ class TestSugerirLimites:
     def test_un_nan_no_entra_a_los_limites(self):
         r = calidad.sugerir_limites([1.0, math.nan, 3.0, 5.0])
         assert r["lecturas"] == 3 and r["maximo"] > 5.0
+
+    def test_el_piso_fisico_no_se_cruza_al_estirar(self):
+        """Medido: sin piso, un caudal de 197 a 35.389 m³/s sugería un mínimo de -17.399."""
+        sin_piso = calidad.sugerir_limites([100.0, 200.0, 300.0, 400.0])
+        con_piso = calidad.sugerir_limites([100.0, 200.0, 300.0, 400.0], piso=0.0)
+        assert sin_piso["minimo"] == -50.0
+        assert con_piso["minimo"] == 0.0 and con_piso["maximo"] == sin_piso["maximo"]
+
+    def test_un_piso_que_no_se_alcanza_no_cambia_nada(self):
+        """El piso solo recorta cuando el estirado lo cruza: uno más bajo que el mínimo sugerido es inocuo."""
+        base = calidad.sugerir_limites([100.0, 200.0, 300.0, 400.0])
+        assert calidad.sugerir_limites([100.0, 200.0, 300.0, 400.0], piso=-1000.0) == base
