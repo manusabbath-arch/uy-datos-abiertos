@@ -96,6 +96,10 @@ RANGO_FISICO = {
 }
 UNIDADES = {"H": "m", "Q": "m³/s"}
 
+# El API se pide en hora de Uruguay (ver `url_observaciones`): el rango se valida en la misma hora. En UTC se
+# rechazaban las lecturas de las 21:00 a las 23:59 UY del último día (las 00:00Z a 02:59Z del siguiente).
+_UY = timezone(timedelta(hours=-3))
+
 # Las series del canal del río Uruguay, fijadas por id (medido el 2026-10-27). El mismo
 # "Concordia" figura en 6 estaciones de otras redes y la 283 es de Brasil: no se fija por nombre.
 SERIES = {
@@ -225,8 +229,8 @@ def observaciones(id_serie: int, desde: date, hasta: date, *, crudo: Optional[Pa
             f"serie {id_serie}: el rango pedido es desde={desde} hasta={hasta}; "
             "el API responde HTTP 200 con cuerpo vacío a un rango inválido"
         )
-    desde_dt = datetime(desde.year, desde.month, desde.day, 0, 0, tzinfo=timezone.utc)
-    hasta_dt = datetime(hasta.year, hasta.month, hasta.day, 23, 59, 59, tzinfo=timezone.utc)
+    desde_dt = datetime(desde.year, desde.month, desde.day, 0, 0, tzinfo=_UY)
+    hasta_dt = datetime(hasta.year, hasta.month, hasta.day, 23, 59, 59, tzinfo=_UY)
     if crudo is not None:
         crudo = Path(crudo)
         if not crudo.is_file():
