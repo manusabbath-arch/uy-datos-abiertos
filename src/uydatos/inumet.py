@@ -347,6 +347,24 @@ def serie_diaria(
     return salida
 
 
+def _la_vigente(dataset: str, candidatos: list[dict]) -> dict:
+    """De varios recursos con el mismo nombre de archivo, el que el catálogo declara modificado más tarde.
+
+    Medido el 2026-11-21: el viento tiene dos `inumet_intensidad_de_viento.csv`, uno modificado el 31/10 (su
+    última fila es del 31/10: una copia que quedó vieja) y otro el 21/11. No son duplicados: sus bytes difieren.
+    Se usa el de `modificado` mayor **solo si hay un ganador único**: sin fecha en alguno, o con un empate, no
+    se sabe cuál es la vigente y elegir sería adivinar.
+    """
+    fechas = [c.get("modificado") or "" for c in candidatos]
+    ganadoras = sorted(fechas, reverse=True)
+    if "" in fechas or ganadoras[0] == ganadoras[1]:
+        raise InumetInvalido(
+            f"{dataset}: el catálogo publica {len(candidatos)} recursos con el mismo nombre y no dice cuál es el "
+            f"vigente (modificado: {fechas}); no se elige uno a ciegas"
+        )
+    return candidatos[fechas.index(ganadoras[0])]
+
+
 def descargar(nombre: str, destino: Path) -> Path:
     """Baja el CSV de datos de `nombre` (una clave de `DATASETS`) a `destino`. **Sale a la red.**
 
@@ -359,9 +377,11 @@ def descargar(nombre: str, destino: Path) -> Path:
         raise InumetInvalido(f"variable desconocida {nombre!r}; las declaradas son {tuple(DATASETS)}")
     dataset = DATASETS[nombre][0]
     candidatos = [r for r in recursos(dataset) if _ARCHIVO.match(Path(r["url"].split("?")[0]).name)]
-    if len(candidatos) != 1:
+    nombres = {Path(r["url"].split("?")[0]).name for r in candidatos}
+    if len(nombres) != 1:
         raise InumetInvalido(f"{dataset}: {len(candidatos)} recursos de datos, se esperaba 1")
-    return bajar_recurso(candidatos[0]["url"], Path(destino))
+    elegido = candidatos[0] if len(candidatos) == 1 else _la_vigente(dataset, candidatos)
+    return bajar_recurso(elegido["url"], Path(destino))
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

@@ -17,6 +17,7 @@ from pathlib import Path
 
 import pytest
 
+from uydatos import catalogo, inumet
 from uydatos.inumet import (
     DATASETS,
     DESFASE_LOCAL,
@@ -268,3 +269,73 @@ class TestResumen:
 
     def test_las_siete_estaciones_del_metadato(self):
         assert len(ESTACIONES) == 7 and "Salto G3" in ESTACIONES
+
+
+def _catalogo_falso(monkeypatch, recursos_falsos):
+    """Un catálogo con `recursos_falsos` = [(nombre, modificado)]; devuelve las URL pedidas a `bajar_recurso`."""
+    urls = [
+        f"https://catalogodatos.gub.uy/dataset/x/resource/{i}/download/{n}" for i, (n, _) in enumerate(recursos_falsos)
+    ]
+    monkeypatch.setattr(
+        catalogo,
+        "recursos",
+        lambda dataset: [{"url": u, "modificado": m} for u, (_, m) in zip(urls, recursos_falsos)],
+    )
+    pedidas = []
+
+    def bajar(url, destino):
+        pedidas.append(url)
+        Path(destino).write_bytes(b"fecha;estacion_id;dir_viento;int_viento\n")
+        return Path(destino)
+
+    monkeypatch.setattr(catalogo, "bajar_recurso", bajar)
+    return urls, pedidas
+
+
+def test_el_mismo_archivo_listado_dos_veces_usa_el_que_el_catalogo_dice_mas_reciente(tmp_path, monkeypatch):
+    """Medido 2026-11-21: el viento tiene dos `inumet_intensidad_de_viento.csv`: uno del 31/10 (la copia que quedó
+    vieja: su última fila es del 31/10) y uno del 21/11. Son bytes distintos, no un duplicado."""
+    urls, pedidas = _catalogo_falso(
+        monkeypatch,
+        [
+            ("inumet_intensidad_de_viento.csv", "2026-10-31T04:06:46.326612"),
+            ("inumet_intensidad_de_viento.csv", "2026-11-21T04:06:22.138182"),
+            ("metadatos_inumet_intensidad_de_viento.json", "2026-11-21T04:06:22.138182"),
+        ],
+    )
+    destino = inumet.descargar("viento", tmp_path / "viento.csv")
+    assert pedidas == [urls[1]]  # solo se baja la vigente
+    assert destino.name == "viento.csv"
+
+
+def test_el_orden_del_catalogo_no_decide(tmp_path, monkeypatch):
+    urls, pedidas = _catalogo_falso(
+        monkeypatch,
+        [
+            ("inumet_a.csv", "2026-11-21T04:06:22"),
+            ("inumet_a.csv", "2026-10-31T04:06:46"),
+        ],
+    )
+    inumet.descargar("viento", tmp_path / "viento.csv")
+    assert pedidas == [urls[0]]
+
+
+@pytest.mark.parametrize(
+    "fechas",
+    [
+        ("2026-11-21T04:06:22", "2026-11-21T04:06:22"),  # empate: no hay una vigente
+        ("2026-11-21T04:06:22", ""),  # una sin fecha: no se sabe cuál es
+        ("", ""),
+    ],
+)
+def test_si_el_catalogo_no_distingue_la_vigente_se_rechaza(tmp_path, monkeypatch, fechas):
+    _, pedidas = _catalogo_falso(monkeypatch, [("inumet_a.csv", fechas[0]), ("inumet_a.csv", fechas[1])])
+    with pytest.raises(InumetInvalido, match="no se elige uno a ciegas"):
+        inumet.descargar("viento", tmp_path / "viento.csv")
+    assert pedidas == [] and list(tmp_path.iterdir()) == []
+
+
+def test_dos_archivos_con_distinto_nombre_siguen_siendo_ambiguos(tmp_path, monkeypatch):
+    _catalogo_falso(monkeypatch, [("inumet_a.csv", "2026-11-21T04:06:22"), ("inumet_b.csv", "2026-11-21T04:06:22")])
+    with pytest.raises(InumetInvalido, match="2 recursos de datos, se esperaba 1"):
+        inumet.descargar("viento", tmp_path / "viento.csv")
