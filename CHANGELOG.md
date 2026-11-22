@@ -1,5 +1,28 @@
 # Cambios
 
+## 0.18.1 — 2026-11-22
+
+- **INA: el rango pedido se valida en hora de Uruguay.** La URL pide `-03:00` pero `observaciones()`
+  validaba el rango en UTC, así que rechazaba como «el API no está respetando el filtro» las lecturas de
+  las 21:00 a las 23:59 de Uruguay del último día (las 00:00Z a 02:59Z del siguiente). Medido: Salto Grande
+  Abajo, altura, ventana 2016-03 a 2016-06, fallaba y ahora lee 5.856 lecturas. Una ventana sin ninguna
+  lectura (enero de 2020 no tiene ninguna en esa serie) sigue rechazada como respuesta vacía: es un hueco
+  de la fuente, no este error.
+- **INUMET: si el catálogo lista un archivo dos veces, se usa el que dice modificado más tarde.** El viento
+  tiene dos `inumet_intensidad_de_viento.csv` con bytes distintos: uno modificado el 31/10 (su última fila
+  es del 31/10, una copia que quedó vieja) y otro el 21/11. `descargar("viento", ...)` fallaba con «2
+  recursos de datos, se esperaba 1». Solo se elige si hay un ganador único: sin fecha en alguno, o con un
+  empate, rechaza con el motivo en vez de adivinar. Los otros cinco datasets no cambian.
+- **`calidad.sugerir_limites(..., piso=)`.** El estirado del rango no cruza un mínimo físico: sin piso, el
+  caudal de Concordia (observado 1.408 a 22.863 m³/s) sugería un mínimo de -9.318 m³/s. Sin `piso` el
+  resultado es el mismo de antes.
+- **A tener en cuenta de la 0.18.0:** la prueba `salto` de `marcar()` (cambio absoluto contra la lectura
+  anterior) no sirve para series de ríos: en Concordia, altura, el cambio entre dos lecturas tiene mediana
+  0,34 m y p99 2,54 m, y aguas abajo de la represa de Salto Grande el desvío contra las lecturas vecinas es
+  unas 5 veces el del embalse; cualquier umbral marcaría la operación real como error. `rango` y `plano` sí
+  separaron defectos reales (el sensor de Salto Grande Abajo clavado en 0, 1 y 2 durante 2016, 15.029
+  lecturas). Para ríos conviene no pasar `max_salto`.
+
 ## 0.18.0 — 2026-11-21
 
 - **Descargas concurrentes: cada una a su propio parcial.** `red.bajar` ya publicaba con
