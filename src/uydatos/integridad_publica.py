@@ -37,13 +37,20 @@ def resumir(datos: dict) -> dict:
                 raise ValueError(f"{lector}: bytes inválidos")
             sellos[digest].append(lector)
     alertas = [
-        {"tipo": "sello_compartido", "sha256": sha, "lectores": sorted(nombres),
-         "interpretacion": "Revisar alcance del sello; no demuestra error de la fuente."}
-        for sha, nombres in sorted(sellos.items()) if len(nombres) > 1
+        {
+            "tipo": "sello_compartido",
+            "sha256": sha,
+            "lectores": sorted(nombres),
+            "interpretacion": "Revisar alcance del sello; no demuestra error de la fuente.",
+        }
+        for sha, nombres in sorted(sellos.items())
+        if len(nombres) > 1
     ]
     return {
-        "version_esquema": 1, "fecha_informe_original": fecha,
-        "registrados": len(filas), "lectura_ok": sum(f["ok"] for f in fuentes),
+        "version_esquema": 1,
+        "fecha_informe_original": fecha,
+        "registrados": len(filas),
+        "lectura_ok": sum(f["ok"] for f in fuentes),
         "sin_verificacion_ok": sum(not f["ok"] for f in fuentes),
         "lectores": sorted(filas, key=lambda f: f["lector"]),
         "alertas": alertas,
