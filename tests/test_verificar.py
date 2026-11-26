@@ -172,3 +172,26 @@ def test_el_esquema_se_lee_de_un_informe_y_no_baja_nada(tmp_path, capsys):
     assert "informe del 2026-10-19" in salida
     assert "ancap" in salida and "fecha, producto" in salida
     assert "ideuy" in salida and "requiere una dirección" in salida
+
+
+def test_destino_compartido_no_contamina_adquisiciones(monkeypatch, tmp_path):
+    """El sello de cada fuente solo cubre su propia adquisición."""
+
+    def escritor(nombre, contenido):
+        def escribir(d):
+            (d / nombre).write_bytes(contenido)
+            return {"ruta": d, "filas": 1, "columnas": ["valor"]}
+
+        return escribir
+
+    monkeypatch.setitem(verificar.VERIFICAR, "bcu", escritor("bcu.csv", b"bcu"))
+    monkeypatch.setitem(verificar.VERIFICAR, "inia", escritor("inia.csv", b"inia"))
+    (tmp_path / "ajeno.txt").write_bytes(b"ajeno")
+    a = verificar.verificar("bcu", tmp_path)
+    b = verificar.verificar("inia", tmp_path)
+    c = verificar.verificar("bcu", tmp_path)
+    assert all(r["ok"] for r in (a, b, c))
+    assert a["bytes"] == c["bytes"] == 3
+    assert b["bytes"] == 4
+    assert a["sha256"] == c["sha256"] != b["sha256"]
+    assert len([p for p in tmp_path.iterdir() if p.is_dir()]) == 3
