@@ -237,7 +237,8 @@ PENDIENTES: dict[str, str] = {
 def verificar(lector: str, destino: Optional[Path] = None) -> dict:
     """Baja y lee una fuente; devuelve su forma y su sello. **Sale a la red.**
 
-    `destino` deja los archivos en disco (para mirarlos); si no se pasa, se usa un directorio
+    `destino` deja los archivos en un subdirectorio nuevo por adquisición (para mirarlos);
+    si no se pasa, se usa un directorio
     temporal que se borra. Nunca levanta: un rechazo del lector se informa con `ok: False` y el
     motivo, porque el informe semanal tiene que decir las trece aunque una esté rota.
     """
@@ -248,7 +249,9 @@ def verificar(lector: str, destino: Optional[Path] = None) -> dict:
         return {**base, "ok": False, "motivo": PENDIENTES[lector]}
     if destino is not None:
         destino.mkdir(parents=True, exist_ok=True)
-        return _en(lector, destino, base)
+        # Cada adquisición tiene su propio directorio, incluso al repetir un lector.
+        captura = Path(tempfile.mkdtemp(prefix=f"{lector}-", dir=destino))
+        return _en(lector, captura, base)
     with tempfile.TemporaryDirectory() as tmp:
         return _en(lector, Path(tmp), base)
 
