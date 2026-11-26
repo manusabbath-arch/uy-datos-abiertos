@@ -1,4 +1,5 @@
 """Resumen offline de informes de verificar; no mide disponibilidad actual."""
+
 from __future__ import annotations
 
 import argparse
