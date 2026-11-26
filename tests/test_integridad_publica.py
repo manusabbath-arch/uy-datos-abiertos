@@ -17,7 +17,7 @@ def test_sello_compartido_no_es_falla_de_fuente():
 
 
 def test_sellos_distintos():
-    assert not resumir({"fecha": "2026-10-19", "fuentes": [fila("a"), fila("b", sha="b"*64)]})["alertas"]
+    assert not resumir({"fecha": "2026-10-19", "fuentes": [fila("a"), fila("b", sha="b" * 64)]})["alertas"]
 
 
 def test_duplicado_rechazado():
