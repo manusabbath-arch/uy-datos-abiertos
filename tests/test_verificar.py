@@ -176,10 +176,12 @@ def test_el_esquema_se_lee_de_un_informe_y_no_baja_nada(tmp_path, capsys):
 
 def test_destino_compartido_no_contamina_adquisiciones(monkeypatch, tmp_path):
     """El sello de cada fuente solo cubre su propia adquisición."""
+
     def escritor(nombre, contenido):
         def escribir(d):
             (d / nombre).write_bytes(contenido)
             return {"ruta": d, "filas": 1, "columnas": ["valor"]}
+
         return escribir
 
     monkeypatch.setitem(verificar.VERIFICAR, "bcu", escritor("bcu.csv", b"bcu"))
