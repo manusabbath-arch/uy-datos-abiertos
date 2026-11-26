@@ -4,8 +4,7 @@ from uydatos.integridad_publica import resumir
 
 
 def fila(nombre, ok=True, sha="a" * 64):
-    return {"lector": nombre, "ok": ok, "sha256": sha, "bytes": 8,
-            "motivo": "dato privado no debe salir"}
+    return {"lector": nombre, "ok": ok, "sha256": sha, "bytes": 8, "motivo": "dato privado no debe salir"}
 
 
 def test_sello_compartido_no_es_falla_de_fuente():
