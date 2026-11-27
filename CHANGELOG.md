@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.19.1 — 2026-11-27
+
+- **El Parlamento vuelve a responder: cambia la forma del `User-Agent`.** parlamento.gub.uy, detrás
+  de CloudFront, respondía 403 desde fines de octubre a `uydatos/0.19.0 (lectura de datos abiertos)`
+  y también a curl, a `python-requests` y a Googlebot. Con `Mozilla/5.0 (compatible; uydatos/X;
+  +https://github.com/manusabbath-arch/uy-datos-abiertos)` responde 200 y entrega el CSV de leyes
+  completo (≈1 MB, 64 s de descarga, medido el 2026-11-27). Es la convención con que se identifica un
+  cliente que no es un navegador: el nombre, la versión y el repositorio siguen a la vista. Test de la
+  forma en `test_version.py`.
+
 ## 0.19.0 — 2026-11-27
 
 - **`uydatos.feriados`: feriados nacionales y días hábiles, sin red.** La lista sale del Decreto-Ley

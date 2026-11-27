@@ -36,6 +36,9 @@ Módulos:
 - `errores`      — la base común de los rechazos: `DatosInvalidos`, que atrapa a los diecinueve.
 """
 
-__version__ = "0.19.0"
+__version__ = "0.19.1"
 
-USER_AGENT = f"uydatos/{__version__} (lectura de datos abiertos)"
+# `Mozilla/5.0 (compatible; nombre/versión; +url)` es la convención de un cliente que no es navegador.
+# parlamento.gub.uy (CloudFront) responde 403 a `uydatos/X (…)` y 200 a esta forma (medido el
+# 2026-11-27); la identidad no cambia: nombre, versión y repositorio siguen a la vista.
+USER_AGENT = f"Mozilla/5.0 (compatible; uydatos/{__version__}; +https://github.com/manusabbath-arch/uy-datos-abiertos)"
