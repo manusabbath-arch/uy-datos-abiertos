@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar
+
+- **`uydatos.feriados`: feriados nacionales y días hábiles, sin red.** La lista sale del Decreto-Ley
+  14.977, los cinco pagos de la Ley 12.590 (art. 18) y los traslados de la Ley 16.805 en la redacción
+  de la Ley 17.414: solo el 19/4, el 18/5 y el 12/10 se corren al lunes. Carnaval y Turismo se
+  calculan desde la Pascua. `feriados_de` devuelve una lista porque dos feriados pueden caer el mismo
+  día (19/04/2025, dentro de Turismo). `dias_habiles` devuelve las dos definiciones de hábil: sin
+  ningún feriado y sin feriados pagos. Años anteriores a 2002 se rechazan, porque regía otra redacción
+  de la ley. Los esperados de 2026 y 2027 salen de un calendario publicado, no del módulo.
+
 ## 0.18.0 — 2026-11-21
 
 - **Descargas concurrentes: cada una a su propio parcial.** `red.bajar` ya publicaba con

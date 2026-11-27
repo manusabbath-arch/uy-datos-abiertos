@@ -14,7 +14,7 @@ SIN_FUENTE = {"red"}  # `red` no lee una fuente: es la única salida a internet 
 
 def test_el_manifiesto_cubre_a_todos_los_lectores():
     """Agregar un lector a `LECTORES` sin su fila en el manifiesto se cae acá."""
-    esperados = (set(LECTORES) - SIN_FUENTE) | {"rut", "semanas"}
+    esperados = (set(LECTORES) - SIN_FUENTE) | {"rut", "semanas", "feriados"}
     faltan = sorted(esperados - set(fuentes.FUENTES))
     sobran = sorted(set(fuentes.FUENTES) - esperados)
     assert not faltan, f"lectores sin fila en el manifiesto: {faltan}"

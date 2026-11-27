@@ -219,6 +219,7 @@ VERIFICAR: dict[str, Callable[[Path], dict]] = {
 
 PENDIENTES: dict[str, str] = {
     "catalogo": "no es una fuente: se mide con `python -m uydatos.catalogo --faltantes`",
+    "feriados": "no lee una fuente: calcula los feriados desde las leyes",
     "hojas": "necesita un archivo de planilla",
     "ideuy": "necesita una dirección",
     "mides": "necesita un número de indicador",

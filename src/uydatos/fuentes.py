@@ -117,6 +117,17 @@ FUENTES: dict[str, Fuente] = {
             "sale de la firma del archivo, no del metadato."
         ),
     },
+    "feriados": {
+        "lector": "feriados",
+        "tipo": "offline",
+        "datasets": (),
+        "recurso": None,
+        "medido": "2026-11-27",
+        "trampa": (
+            "El 19/4, el 18/5 y el 12/10 se observan el lunes más cercano (Ley 16.805): el 18/05/2027 "
+            "es martes y el feriado es el lunes 17. Dos feriados pueden caer el mismo día."
+        ),
+    },
     "ibge": {
         "lector": "ibge",
         "tipo": "url",
