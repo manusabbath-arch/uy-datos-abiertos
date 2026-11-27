@@ -1,6 +1,6 @@
 # Cambios
 
-## Sin publicar
+## 0.19.0 — 2026-11-27
 
 - **`uydatos.feriados`: feriados nacionales y días hábiles, sin red.** La lista sale del Decreto-Ley
   14.977, los cinco pagos de la Ley 12.590 (art. 18) y los traslados de la Ley 16.805 en la redacción
@@ -9,6 +9,11 @@
   día (19/04/2025, dentro de Turismo). `dias_habiles` devuelve las dos definiciones de hábil: sin
   ningún feriado y sin feriados pagos. Años anteriores a 2002 se rechazan, porque regía otra redacción
   de la ley. Los esperados de 2026 y 2027 salen de un calendario publicado, no del módulo.
+- **`compras.iterar_adjudicaciones`: una adjudicación por vez.** `leer_adjudicaciones` arma la
+  lista del año entero. Medido el 2026-11-27 con el ZIP de 2025 (140.144 adjudicaciones): pico de
+  473 MB asignados con `leer_adjudicaciones` y de 176 MB recorriéndolo con el iterador, que tiene
+  un JSON mensual en memoria por vez. `leer_adjudicaciones` queda igual (es `list()` del iterador).
+  Los rechazos se levantan al iterar: uno de un mes tardío llega después de los meses anteriores.
 
 ## 0.18.0 — 2026-11-21
 

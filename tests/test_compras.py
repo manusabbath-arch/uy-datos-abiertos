@@ -211,3 +211,25 @@ class TestConcentracion:
     def test_sin_importes_en_pesos_no_hay_concentracion(self, tmp_path):
         s = resumen(leer_adjudicaciones(_zip(tmp_path, [_adjudicacion(1, BSE, [_item("X", 1, 5, "USD")])])))
         assert s["concentracion_uyu"] is None and s["mayores_items"] == []
+
+
+class TestIterar:
+    """`iterar_adjudicaciones` entrega una adjudicación por vez: quien compacta no necesita tener el
+    año entero en memoria dos veces (medido el 2026-11-27: 343 MB el año 2025 leído con
+    `leer_adjudicaciones`)."""
+
+    def test_da_lo_mismo_que_leer(self, tmp_path):
+        from uydatos.compras import iterar_adjudicaciones
+
+        p = _zip(tmp_path, [_adjudicacion(1, BSE, [_item("X", 1, 100)]), _adjudicacion(2, IM, [_item("Y", 2, 3)])])
+        it = iterar_adjudicaciones(p)
+        assert not isinstance(it, list)
+        assert list(it) == leer_adjudicaciones(p)
+
+    def test_un_archivo_que_no_es_zip_se_rechaza_al_iterar(self, tmp_path):
+        from uydatos.compras import iterar_adjudicaciones
+
+        p = tmp_path / "compras2025.json"
+        p.write_text('{"releases": []}', encoding="utf-8")
+        with pytest.raises(ComprasInvalido, match="ZIP"):
+            next(iterar_adjudicaciones(p))
