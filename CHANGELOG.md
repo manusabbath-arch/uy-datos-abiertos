@@ -1,5 +1,13 @@
 # Cambios
 
+## Sin publicar
+
+- **`compras.iterar_adjudicaciones`: una adjudicación por vez.** `leer_adjudicaciones` arma la
+  lista del año entero. Medido el 2026-11-27 con el ZIP de 2025 (140.144 adjudicaciones): pico de
+  473 MB asignados con `leer_adjudicaciones` y de 176 MB recorriéndolo con el iterador, que tiene
+  un JSON mensual en memoria por vez. `leer_adjudicaciones` queda igual (es `list()` del iterador).
+  Los rechazos se levantan al iterar: uno de un mes tardío llega después de los meses anteriores.
+
 ## 0.18.0 — 2026-11-21
 
 - **Descargas concurrentes: cada una a su propio parcial.** `red.bajar` ya publicaba con

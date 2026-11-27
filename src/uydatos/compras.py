@@ -53,7 +53,7 @@ import zipfile
 from collections import Counter, defaultdict
 from datetime import date, datetime
 from pathlib import Path
-from typing import Callable, Optional, Sequence
+from typing import Callable, Iterator, Optional, Sequence
 
 from uydatos import catalogo, red
 from uydatos.errores import DatosInvalidos
@@ -129,12 +129,21 @@ def leer_adjudicaciones(ruta: Path) -> list[dict]:
     Saltea los llamados y las anulaciones, que no son compras. Devuelve todas las adjudicaciones
     con su estado: `resumen()` suma solo las activas.
     """
+    return list(iterar_adjudicaciones(ruta))
+
+
+def iterar_adjudicaciones(ruta: Path) -> Iterator[dict]:
+    """Lo mismo que `leer_adjudicaciones`, una adjudicación por vez y un JSON mensual en memoria.
+
+    El año 2025 leído entero ocupa 343 MB (medido el 2026-11-27): quien resume o compacta no
+    necesita la lista. Los rechazos (no es un ZIP, un JSON ilegible) se levantan **al iterar**, y uno
+    del mes 7 llega después de haber entregado los meses anteriores: no usar un resultado parcial.
+    """
     ruta = Path(ruta)
     if not zipfile.is_zipfile(ruta):
         raise ComprasInvalido(
             f"{ruta.name}: no es un ZIP. El catálogo lo declara JSON y es un ZIP con un JSON por mes."
         )
-    out = []
     with zipfile.ZipFile(ruta) as z:
         nombres = sorted(n for n in z.namelist() if _ADJUDICACIONES.match(n.rsplit("/", 1)[-1]))
         if not nombres:
@@ -152,7 +161,7 @@ def leer_adjudicaciones(ruta: Path) -> list[dict]:
                 for a in r.get("awards") or []:
                     items, importes, sin_moneda = _items(a, f"{nombre} {r.get('ocid')}")
                     sup = (a.get("suppliers") or [None])[0]
-                    out.append(
+                    yield (
                         {
                             "ocid": r["ocid"],
                             "fecha": fecha,
@@ -164,7 +173,6 @@ def leer_adjudicaciones(ruta: Path) -> list[dict]:
                             "sin_moneda": sin_moneda,
                         }
                     )
-    return out
 
 
 def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "") -> dict:
