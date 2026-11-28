@@ -377,7 +377,7 @@ def precios_de_referencia(
                 g["organismos"].add(comp["id"])
                 g["fechas"].append(a["fecha"])
     salida = []
-    for (catalogo, unidad, moneda), g in grupos.items():
+    for (cat, unidad, moneda), g in grupos.items():
         valores = sorted(p[0] for p in g["precios"])
         mediana = statistics.median(valores)
         if len(valores) >= 2:
@@ -401,7 +401,7 @@ def precios_de_referencia(
             raros.sort(key=lambda x: -max(x["veces_la_mediana"], 1 / x["veces_la_mediana"]))
         salida.append(
             {
-                "catalogo": catalogo,
+                "catalogo": cat,
                 "descripcion": g["descripcion"],
                 "unidad": unidad,
                 "moneda": moneda,
