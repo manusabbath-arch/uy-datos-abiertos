@@ -352,6 +352,10 @@ def descargar(nombre: str, destino: Path) -> Path:
 
     El recurso de datos se elige por el nombre del archivo (`inumet_*.csv`), medido en los seis
     datasets: el catálogo publica además el metadato, y en algunos casos también en CSV.
+
+    Si hay varios con **el mismo nombre de archivo**, se toma el de `modificado` más reciente: el
+    2026-11-27 el viento tenía dos `inumet_intensidad_de_viento.csv`, uno congelado el 31/10 y otro al
+    día. Con nombres distintos, o con la fecha más reciente repetida, se rechaza: no se adivina.
     """
     from uydatos.catalogo import bajar_recurso, recursos
 
@@ -359,6 +363,10 @@ def descargar(nombre: str, destino: Path) -> Path:
         raise InumetInvalido(f"variable desconocida {nombre!r}; las declaradas son {tuple(DATASETS)}")
     dataset = DATASETS[nombre][0]
     candidatos = [r for r in recursos(dataset) if _ARCHIVO.match(Path(r["url"].split("?")[0]).name)]
+    if len(candidatos) > 1 and len({Path(r["url"].split("?")[0]).name for r in candidatos}) == 1:
+        fechas = sorted((str(r.get("modificado") or ""), i) for i, r in enumerate(candidatos))
+        if fechas[-1][0] and fechas[-1][0] != fechas[-2][0]:
+            candidatos = [candidatos[fechas[-1][1]]]
     if len(candidatos) != 1:
         raise InumetInvalido(f"{dataset}: {len(candidatos)} recursos de datos, se esperaba 1")
     return bajar_recurso(candidatos[0]["url"], Path(destino))

@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.19.2 — 2026-11-27
+
+- **INUMET: el viento vuelve a bajar.** Desde el 27/11/2026 el dataset del viento publica dos
+  `inumet_intensidad_de_viento.csv` con id distinto: uno congelado el 31/10 y otro al día.
+  `inumet.descargar` rechazaba («2 recursos de datos, se esperaba 1»). Ahora, entre recursos con el
+  **mismo nombre de archivo**, toma el de `modificado` más reciente; con nombres distintos o con la
+  fecha más reciente repetida sigue rechazando. Probado contra el catálogo real: 198.003 filas, última
+  observación del día. Tres tests sin red, en rojo antes del arreglo.
+
 ## 0.19.1 — 2026-11-27
 
 - **El Parlamento vuelve a responder: cambia la forma del `User-Agent`.** parlamento.gub.uy, detrás

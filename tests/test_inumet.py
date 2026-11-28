@@ -268,3 +268,58 @@ class TestResumen:
 
     def test_las_siete_estaciones_del_metadato(self):
         assert len(ESTACIONES) == 7 and "Salto G3" in ESTACIONES
+
+
+class TestRecursoDuplicado:
+    """Medido el 2026-11-27: el dataset del viento publica dos `inumet_intensidad_de_viento.csv` con id
+    distinto, uno congelado el 31/10 y otro al día. Con el mismo nombre de archivo se elige el más
+    reciente; con nombres distintos o fechas iguales se sigue rechazando."""
+
+    def _recursos(self, monkeypatch, recursos):
+        from uydatos import catalogo, inumet
+
+        bajados = []
+        monkeypatch.setattr(catalogo, "recursos", lambda dataset: recursos)
+        monkeypatch.setattr(catalogo, "bajar_recurso", lambda url, destino: bajados.append(url) or destino)
+        return inumet, bajados
+
+    def _r(self, ident, nombre, modificado):
+        return {
+            "nombre": "x",
+            "url": f"https://c/{ident}/download/{nombre}",
+            "formato": "CSV",
+            "modificado": modificado,
+        }
+
+    def test_mismo_archivo_gana_el_mas_reciente(self, monkeypatch, tmp_path):
+        inumet, bajados = self._recursos(
+            monkeypatch,
+            [
+                self._r("viejo", "inumet_intensidad_de_viento.csv", "2026-10-31T04:06:46"),
+                self._r("nuevo", "inumet_intensidad_de_viento.csv", "2026-11-27T04:06:40"),
+            ],
+        )
+        inumet.descargar("viento", tmp_path / "v.csv")
+        assert bajados == ["https://c/nuevo/download/inumet_intensidad_de_viento.csv"]
+
+    def test_nombres_distintos_se_rechazan(self, monkeypatch, tmp_path):
+        inumet, _ = self._recursos(
+            monkeypatch,
+            [
+                self._r("a", "inumet_intensidad_de_viento.csv", "2026-10-31T04:06:46"),
+                self._r("b", "inumet_direccion_de_viento.csv", "2026-11-27T04:06:40"),
+            ],
+        )
+        with pytest.raises(inumet.InumetInvalido, match="2 recursos"):
+            inumet.descargar("viento", tmp_path / "v.csv")
+
+    def test_misma_fecha_se_rechaza(self, monkeypatch, tmp_path):
+        inumet, _ = self._recursos(
+            monkeypatch,
+            [
+                self._r("a", "inumet_intensidad_de_viento.csv", "2026-11-27T04:06:40"),
+                self._r("b", "inumet_intensidad_de_viento.csv", "2026-11-27T04:06:40"),
+            ],
+        )
+        with pytest.raises(inumet.InumetInvalido, match="2 recursos"):
+            inumet.descargar("viento", tmp_path / "v.csv")
