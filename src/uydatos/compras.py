@@ -38,6 +38,12 @@ Las trampas, medidas el 10/10/2026 sobre 2024 y 2025
    Solo 2.281 de los procedimientos de 2025 sin llamado lo tienen en el archivo de 2024. Que falte el
    llamado **no prueba** que sea compra directa: `modalidad` es `None` y `resumen()` las cuenta en
    `sin_modalidad`. Un «X % fue compra directa» calculado con este archivo omite dos tercios.
+10. **El mismo producto se compra en unidades distintas y a veces mal declaradas.** «Guantes de
+   látex descartable no estéril» (catálogo 37021, 2025) aparece por UNIDAD (mediana $1,13, 72
+   ítems) y por CAJA (mediana $113, 63 ítems), con una «caja» a $0,14; hay precios 0, ítems sin
+   moneda y unidades «-----». `precios_de_referencia()` no mezcla unidades ni monedas, excluye
+   con motivo lo que no tiene precio comparable y señala (sin borrar) los precios que se alejan
+   diez veces de la mediana de su grupo. Medido el 2026-11-28.
 
 Sobre los proveedores: las adjudicaciones traen nombre e identificación de cada proveedor, que puede
 ser una persona física. Este módulo los devuelve como los publica la ARCE; qué se expone de una
@@ -53,13 +59,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import statistics
 import sys
 import unicodedata
 import zipfile
 from collections import Counter, defaultdict
 from datetime import date, datetime
 from pathlib import Path
-from typing import Callable, Iterator, Optional, Sequence
+from typing import Callable, Iterable, Iterator, Optional, Sequence
 
 from uydatos import catalogo, red
 from uydatos.errores import DatosInvalidos
@@ -116,6 +123,7 @@ def _items(award: dict, donde: str) -> tuple[list[dict], dict[str, float], float
                 "descripcion": str(clas.get("description") or "").strip(),
                 "catalogo": str(clas.get("id") or ""),
                 "esquema": str(clas.get("scheme") or ""),
+                "unidad": str((it.get("unit") or {}).get("name") or "").strip(),
                 "cantidad": cantidad,
                 "precio_unitario": precio,
                 "moneda": moneda,
@@ -223,6 +231,7 @@ def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "", m
     org, txt, mod = _sin_tildes(organismo), _sin_tildes(buscar), _sin_tildes(modalidad)
     por_modalidad: Counter = Counter()
     sin_modalidad = 0
+    sin_modalidad_por_comprador: Counter = Counter()
     excluidas: Counter = Counter()
     importes: dict[str, float] = defaultdict(float)
     por_comprador: dict[str, dict] = {}
@@ -241,6 +250,7 @@ def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "", m
         m = a.get("modalidad")
         if m is None:
             sin_modalidad += 1
+            sin_modalidad_por_comprador[comp["id"]] += 1
             if mod:
                 continue
         elif mod and _sin_tildes(m) != mod:
@@ -304,8 +314,112 @@ def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "", m
         "sin_comprador": sin_comprador,
         "mayores_items": mayores,
         "concentracion_uyu": concentracion,
-        "por_comprador": [{**c, "importes": {m: round(v, 2) for m, v in c["importes"].items()}} for c in compradores],
+        "por_comprador": [
+            {
+                **c,
+                "importes": {m: round(v, 2) for m, v in c["importes"].items()},
+                "sin_modalidad": sin_modalidad_por_comprador[c["id"]],
+            }
+            for c in compradores
+        ],
     }
+
+
+#: Un precio que se aleja más de estas veces de la mediana de su grupo se señala como atípico.
+VECES_ATIPICO = 10.0
+#: Con menos precios que esto la mediana no alcanza para llamar atípico a nadie.
+MINIMO_PARA_ATIPICOS = 5
+_SIN_UNIDAD = re.compile(r"^[-\s.]*$")
+
+
+def precios_de_referencia(
+    adjudicaciones: Iterable[dict], buscar: str, organismo: str = "", modalidad: str = "", atipicos: int = 5
+) -> dict:
+    """Precios unitarios adjudicados de un producto, para usar como antecedente de una compra.
+
+    Toma los ítems de adjudicaciones activas cuya descripción contiene `buscar` (sin tildes ni
+    mayúsculas), opcionalmente de un `organismo` (nombre o id) y una `modalidad`. Los agrupa por
+    (catálogo, unidad, moneda): nunca compara una caja con una unidad ni pesos con dólares. Excluye,
+    contando el motivo, los ítems con precio 0 o negativo, sin moneda o sin unidad. En cada grupo
+    devuelve n, organismos distintos, mínimo, cuartiles, máximo, fechas y hasta `atipicos` precios
+    que se alejan `VECES_ATIPICO` veces de la mediana (con su `ocid`, para revisarlos): se señalan,
+    no se descartan, porque no se sabe cuál es el precio real. Grupos ordenados por n.
+    """
+    txt = _sin_tildes(buscar)
+    if not txt:
+        raise ValueError("buscar: hace falta un producto; un precio de referencia de todo no existe")
+    org, mod = _sin_tildes(organismo), _sin_tildes(modalidad)
+    excluidos: Counter = Counter()
+    grupos: dict[tuple[str, str, str], dict] = {}
+    for a in adjudicaciones:
+        if a["estado"] != "active":
+            continue
+        comp = a["comprador"] or {"id": "", "nombre": "(sin comprador en el archivo)"}
+        if org and org not in (_sin_tildes(comp["nombre"]), _sin_tildes(comp["id"])):
+            continue
+        if mod and _sin_tildes(a.get("modalidad") or "") != mod:
+            continue
+        for i in a["items"]:
+            if txt not in _sin_tildes(i["descripcion"]):
+                continue
+            if not i["moneda"]:
+                excluidos["sin_moneda"] += 1
+            elif i["precio_unitario"] <= 0:
+                excluidos["precio_cero"] += 1
+            elif _SIN_UNIDAD.match(i.get("unidad") or ""):
+                excluidos["sin_unidad"] += 1
+            else:
+                g = grupos.setdefault(
+                    (i.get("catalogo", ""), i["unidad"], i["moneda"]),
+                    {"descripcion": i["descripcion"], "precios": [], "organismos": set(), "fechas": []},
+                )
+                g["precios"].append((i["precio_unitario"], i["cantidad"], a["ocid"], comp["nombre"]))
+                g["organismos"].add(comp["id"])
+                g["fechas"].append(a["fecha"])
+    salida = []
+    for (catalogo, unidad, moneda), g in grupos.items():
+        valores = sorted(p[0] for p in g["precios"])
+        mediana = statistics.median(valores)
+        if len(valores) >= 2:
+            p25, _, p75 = statistics.quantiles(valores, n=4, method="inclusive")
+        else:
+            p25 = p75 = mediana
+        raros = []
+        if len(valores) >= MINIMO_PARA_ATIPICOS:
+            for precio, cantidad, ocid, comprador in g["precios"]:
+                veces = precio / mediana
+                if veces > VECES_ATIPICO or veces < 1 / VECES_ATIPICO:
+                    raros.append(
+                        {
+                            "ocid": ocid,
+                            "comprador": comprador,
+                            "precio_unitario": precio,
+                            "cantidad": cantidad,
+                            "veces_la_mediana": round(veces, 4),
+                        }
+                    )
+            raros.sort(key=lambda x: -max(x["veces_la_mediana"], 1 / x["veces_la_mediana"]))
+        salida.append(
+            {
+                "catalogo": catalogo,
+                "descripcion": g["descripcion"],
+                "unidad": unidad,
+                "moneda": moneda,
+                "n": len(valores),
+                "organismos": len(g["organismos"]),
+                "minimo": valores[0],
+                "p25": round(p25, 4),
+                "mediana": round(mediana, 4),
+                "p75": round(p75, 4),
+                "maximo": valores[-1],
+                "desde": min(g["fechas"]).isoformat(),
+                "hasta": max(g["fechas"]).isoformat(),
+                "n_atipicos": len(raros),
+                "atipicos": raros[: max(0, atipicos)],
+            }
+        )
+    salida.sort(key=lambda x: (-x["n"], x["catalogo"], x["unidad"], x["moneda"]))
+    return {"buscar": buscar, "grupos": salida, "excluidos": dict(excluidos)}
 
 
 def convertir(importes: dict[str, float], fecha: date, cotizar: Callable[[int, date], Optional[float]]) -> dict:

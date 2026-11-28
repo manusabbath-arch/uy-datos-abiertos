@@ -1,5 +1,20 @@
 # Cambios
 
+## 0.21.0 — 2026-11-28
+
+- **`compras.precios_de_referencia()`: precios unitarios adjudicados de un producto**, el antecedente
+  que pidieron los compradores en la consulta pública de ARCE (2023). Agrupa por (catálogo, unidad,
+  moneda) y nunca compara una caja con una unidad; excluye con motivo los ítems con precio 0, sin
+  moneda o sin unidad; por grupo da n, organismos, mínimo, cuartiles, máximo y fechas, y señala con
+  su `ocid` (sin borrarlos) los precios a más de diez veces de la mediana. Medido sobre 2025:
+  «guantes de látex descartable no estéril» por UNIDAD tiene mediana $1,13 (72 ítems, 12 organismos)
+  y por CAJA $113 con 22 atípicos de 63, entre ellos una «caja» a $0,14. Siete tests sin red.
+- Cada ítem trae su `unidad` (el `unit.name` de OCDS).
+- `resumen()` da `sin_modalidad` por comprador. Medido sobre 2025: Intendencia de Montevideo 12.187
+  de 16.752 (73 %), de Florida 315 de 343 (92 %), de Salto 27 de 42. Las intendencias de Durazno,
+  Lavalleja, Maldonado, Rocha y Soriano no figuran como compradoras en el archivo de 2025: el dato
+  abierto no prueba que no hayan comprado.
+
 ## 0.20.1 — 2026-11-28
 
 - **Compras: la modalidad sin parsear dos veces el año.** 0.20.0 leía todos los JSON para juntar los

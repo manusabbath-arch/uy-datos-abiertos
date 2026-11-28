@@ -17,6 +17,7 @@ from uydatos.compras import (
     ComprasInvalido,
     convertir,
     leer_adjudicaciones,
+    precios_de_referencia,
     resumen,
 )
 
@@ -294,3 +295,82 @@ class TestModalidad:
         s = resumen(leer_adjudicaciones(_zip_con_llamados(tmp_path, a, ll)), modalidad="compra por excepcion")
         assert s["adjudicaciones"] == 1 and s["importes"] == {"UYU": 10.0}
         assert s["sin_modalidad"] == 1  # la del ocid 3 no se sabe: se avisa, no se descarta en silencio
+
+
+def _item_u(descripcion, precio, unidad="UNIDAD", catalogo="37021", moneda="UYU", cantidad=1):
+    it = _item(descripcion, cantidad, precio, moneda, catalogo)
+    it["unit"]["name"] = unidad
+    return it
+
+
+class TestPreciosDeReferencia:
+    """Lo que pidieron los compradores en la consulta de ARCE (2023): precios de procesos anteriores.
+    Medido sobre 2025: «guantes de látex descartable no estéril» (catálogo 37021) se compra por UNIDAD
+    (mediana $1,13) y por CAJA (mediana $113), con una «caja» a $0,14. No se mezclan unidades."""
+
+    def test_el_item_trae_la_unidad(self, tmp_path):
+        (a,) = leer_adjudicaciones(_zip(tmp_path, [_adjudicacion(1, IM, [_item_u("GUANTES", 1.1, "CAJA")])]))
+        assert a["items"][0]["unidad"] == "CAJA"
+
+    def test_agrupa_por_catalogo_unidad_y_moneda_sin_mezclar(self, tmp_path):
+        r = [
+            _adjudicacion(1, IM, [_item_u("GUANTES DE LATEX", 1.0)]),
+            _adjudicacion(2, BSE, [_item_u("GUANTES DE LATEX", 1.2)]),
+            _adjudicacion(3, IM, [_item_u("GUANTES DE LATEX", 1.4)]),
+            _adjudicacion(4, IM, [_item_u("GUANTES DE LATEX", 113.0, "CAJA")]),
+            _adjudicacion(5, IM, [_item_u("GUANTES DE LATEX", 2.0, moneda="USD")]),
+        ]
+        g = precios_de_referencia(leer_adjudicaciones(_zip(tmp_path, r)), buscar="guantes de látex")
+        claves = [(x["catalogo"], x["unidad"], x["moneda"], x["n"]) for x in g["grupos"]]
+        assert claves[0] == ("37021", "UNIDAD", "UYU", 3)
+        assert set(claves[1:]) == {("37021", "CAJA", "UYU", 1), ("37021", "UNIDAD", "USD", 1)}
+        primero = g["grupos"][0]
+        assert (primero["minimo"], primero["mediana"], primero["maximo"]) == (1.0, 1.2, 1.4)
+        assert primero["organismos"] == 2
+
+    def test_precio_cero_sin_moneda_y_sin_unidad_se_excluyen_con_motivo(self, tmp_path):
+        r = [
+            _adjudicacion(1, IM, [_item_u("HIPOCLORITO", 0.0, "L")]),
+            _adjudicacion(2, IM, [_item_u("HIPOCLORITO", 20.0, "L", moneda=None)]),
+            _adjudicacion(3, IM, [_item_u("HIPOCLORITO", 20.0, "-----")]),
+            _adjudicacion(4, IM, [_item_u("HIPOCLORITO", 20.0, "L")]),
+        ]
+        g = precios_de_referencia(leer_adjudicaciones(_zip(tmp_path, r)), buscar="hipoclorito")
+        assert g["excluidos"] == {"precio_cero": 1, "sin_moneda": 1, "sin_unidad": 1}
+        assert [x["n"] for x in g["grupos"]] == [1]
+
+    def test_los_atipicos_se_senalan_con_su_ocid_y_no_se_descartan(self, tmp_path):
+        """Una «caja» a $0,14 entre cajas de $100: se señala (diez veces de la mediana), no se borra."""
+        precios = [100, 105, 110, 115, 120, 0.14]
+        r = [_adjudicacion(i, IM, [_item_u("GUANTES", p, "CAJA")]) for i, p in enumerate(precios, 1)]
+        (grupo,) = precios_de_referencia(leer_adjudicaciones(_zip(tmp_path, r)), buscar="guantes")["grupos"]
+        assert grupo["n"] == 6
+        assert [(x["ocid"], x["precio_unitario"]) for x in grupo["atipicos"]] == [("ocds-yfs5dr-6", 0.14)]
+
+    def test_con_menos_de_cinco_precios_no_se_senalan_atipicos(self, tmp_path):
+        r = [_adjudicacion(i, IM, [_item_u("GUANTES", p, "CAJA")]) for i, p in enumerate([100, 0.14], 1)]
+        (grupo,) = precios_de_referencia(leer_adjudicaciones(_zip(tmp_path, r)), buscar="guantes")["grupos"]
+        assert grupo["atipicos"] == []
+
+    def test_solo_adjudicaciones_activas_y_filtra_por_organismo(self, tmp_path):
+        r = [
+            _adjudicacion(1, IM, [_item_u("GUANTES", 1.0)]),
+            _adjudicacion(2, IM, [_item_u("GUANTES", 9.0)], estado="cancelled"),
+            _adjudicacion(3, BSE, [_item_u("GUANTES", 5.0)]),
+        ]
+        g = precios_de_referencia(leer_adjudicaciones(_zip(tmp_path, r)), buscar="guantes", organismo="98-1")
+        assert [x["mediana"] for x in g["grupos"]] == [1.0]
+
+    def test_sin_buscar_se_rechaza(self, tmp_path):
+        """Un precio de referencia de «todo» no existe: sin producto no hay comparación."""
+        with pytest.raises(ValueError, match="buscar"):
+            precios_de_referencia([], buscar=" ")
+
+
+class TestModalidadPorOrganismo:
+    def test_cada_comprador_dice_cuantas_no_traen_modalidad(self, tmp_path):
+        a = [_adjudicacion(1, IM, [_item("X", 1, 1)]), _adjudicacion(2, IM, [_item("X", 1, 1)]),
+             _adjudicacion(3, BSE, [_item("X", 1, 1)])]  # fmt: skip
+        s = resumen(leer_adjudicaciones(_zip_con_llamados(tmp_path, a, [_llamado(1, "Compra Directa")])))
+        por = {c["nombre"]: c["sin_modalidad"] for c in s["por_comprador"]}
+        assert por == {IM[1]: 1, BSE[1]: 1}
