@@ -233,3 +233,59 @@ class TestIterar:
         p.write_text('{"releases": []}', encoding="utf-8")
         with pytest.raises(ComprasInvalido, match="ZIP"):
             next(iterar_adjudicaciones(p))
+
+
+def _llamado(ocid, modalidad, tag="tender", fecha="2025-03-01T10:00:00Z"):
+    return {
+        "tag": [tag],
+        "ocid": f"ocds-yfs5dr-{ocid}",
+        "id": f"llamado-{ocid}",
+        "date": fecha,
+        "tender": {"id": str(ocid), "procurementMethodDetails": modalidad, "title": f"{modalidad} 1/2025"},
+    }
+
+
+def _zip_con_llamados(tmp_path: Path, adjudicaciones: list[dict], llamados: list[dict]) -> Path:
+    p = tmp_path / "compras2025.zip"
+    with zipfile.ZipFile(p, "w") as z:
+        z.writestr("2025/a-03-2025.json", json.dumps({"version": "1.1", "releases": adjudicaciones}))
+        z.writestr("2025/l-02-2025.json", json.dumps({"version": "1.1", "releases": llamados}))
+    return p
+
+
+class TestModalidad:
+    """La modalidad (compra directa, licitación...) está en el llamado, no en la adjudicación. El 77 %
+    de los procedimientos adjudicados en 2025 no tiene llamado en el archivo: su modalidad no se sabe."""
+
+    def test_la_modalidad_sale_del_llamado_con_el_mismo_ocid(self, tmp_path):
+        a = [_adjudicacion(1, IM, [_item("X", 1, 100)]), _adjudicacion(2, IM, [_item("Y", 1, 50)])]
+        ll = [_llamado(1, "Compra Directa"), _llamado(2, "Licitación Abreviada")]
+        r = leer_adjudicaciones(_zip_con_llamados(tmp_path, a, ll))
+        assert [x["modalidad"] for x in r] == ["Compra Directa", "Licitación Abreviada"]
+
+    def test_sin_llamado_la_modalidad_es_desconocida_no_compra_directa(self, tmp_path):
+        """No se adivina: que falte el llamado no prueba que sea compra directa."""
+        (x,) = leer_adjudicaciones(_zip_con_llamados(tmp_path, [_adjudicacion(7, IM, [_item("X", 1, 1)])], []))
+        assert x["modalidad"] is None
+
+    def test_vale_la_ultima_actualizacion_del_llamado(self, tmp_path):
+        ll = [
+            _llamado(1, "Compra Directa", "tenderUpdate", "2025-03-03T10:00:00Z"),
+            _llamado(1, "Licitación Abreviada", "tender", "2025-03-01T10:00:00Z"),
+        ]
+        (x,) = leer_adjudicaciones(_zip_con_llamados(tmp_path, [_adjudicacion(1, IM, [_item("X", 1, 1)])], ll))
+        assert x["modalidad"] == "Compra Directa"
+
+    def test_el_resumen_cuenta_por_modalidad_y_las_desconocidas_aparte(self, tmp_path):
+        a = [_adjudicacion(i, IM, [_item("X", 1, 10)]) for i in (1, 2, 3, 4)]
+        ll = [_llamado(1, "Compra Directa"), _llamado(2, "Compra Directa"), _llamado(3, "Compra por Excepción")]
+        s = resumen(leer_adjudicaciones(_zip_con_llamados(tmp_path, a, ll)))
+        assert s["por_modalidad"] == {"Compra Directa": 2, "Compra por Excepción": 1}
+        assert s["sin_modalidad"] == 1
+
+    def test_el_resumen_filtra_por_modalidad_sin_tildes(self, tmp_path):
+        a = [_adjudicacion(i, IM, [_item("X", 1, 10 * i)]) for i in (1, 2, 3)]
+        ll = [_llamado(1, "Compra por Excepción"), _llamado(2, "Licitación Pública")]
+        s = resumen(leer_adjudicaciones(_zip_con_llamados(tmp_path, a, ll)), modalidad="compra por excepcion")
+        assert s["adjudicaciones"] == 1 and s["importes"] == {"UYU": 10.0}
+        assert s["sin_modalidad"] == 1  # la del ocid 3 no se sabe: se avisa, no se descarta en silencio

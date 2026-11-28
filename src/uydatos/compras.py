@@ -32,6 +32,12 @@ Las trampas, medidas el 10/10/2026 sobre 2024 y 2025
 8. **Hay adjudicaciones sin el campo `buyer`**: el comprador sale de `parties`. Algunas no lo traen
    en ningún lugar (96 en 2024, 53 en 2025) y otras no traen proveedor (4.151 en 2025): se leen, se
    suman y se cuentan aparte, en vez de rechazar el año entero por unos registros.
+9. **La modalidad (compra directa, licitación…) no está en la adjudicación sino en el llamado**, y
+   la mayoría de las adjudicaciones no tiene llamado en el archivo: sin modalidad quedan 92.246 de
+   140.128 activas en 2025 (65,8 %) y 114.036 de 165.915 en 2024 (68,7 %); medido el 2026-11-27.
+   Solo 2.281 de los procedimientos de 2025 sin llamado lo tienen en el archivo de 2024. Que falte el
+   llamado **no prueba** que sea compra directa: `modalidad` es `None` y `resumen()` las cuenta en
+   `sin_modalidad`. Un «X % fue compra directa» calculado con este archivo omite dos tercios.
 
 Sobre los proveedores: las adjudicaciones traen nombre e identificación de cada proveedor, que puede
 ser una persona física. Este módulo los devuelve como los publica la ARCE; qué se expone de una
@@ -60,6 +66,7 @@ from uydatos.errores import DatosInvalidos
 
 DATASET = "arce-datos-historicos-de-compras"
 _ADJUDICACIONES = re.compile(r"^a-(\d{2})-(\d{4})\.json$")
+_MENSUALES = re.compile(r"^[al]-(\d{2})-(\d{4})\.json$")
 
 # Código ISO de la moneda en OCDS -> código de la cotización del BCU (consultado en awsbcumonedas el
 # 10/10/2026). Dólar y real: el billete, que es la serie que usa el resto del paquete; qué cotización
@@ -124,7 +131,8 @@ def _items(award: dict, donde: str) -> tuple[list[dict], dict[str, float], float
 
 def leer_adjudicaciones(ruta: Path) -> list[dict]:
     """Las adjudicaciones de un archivo anual. Una por proveedor adjudicado: `ocid`, `fecha`,
-    `comprador`, `proveedor` (o None), `estado`, `items`, `importes` (por moneda) y `sin_moneda`.
+    `comprador`, `proveedor` (o None), `estado`, `modalidad` (del llamado, o None si el archivo no
+    trae llamado para ese `ocid`), `items`, `importes` (por moneda) y `sin_moneda`.
 
     Saltea los llamados y las anulaciones, que no son compras. Devuelve todas las adjudicaciones
     con su estado: `resumen()` suma solo las activas.
@@ -148,12 +156,9 @@ def iterar_adjudicaciones(ruta: Path) -> Iterator[dict]:
         nombres = sorted(n for n in z.namelist() if _ADJUDICACIONES.match(n.rsplit("/", 1)[-1]))
         if not nombres:
             raise ComprasInvalido(f"{ruta.name}: ningún archivo a-MM-AAAA.json de adjudicaciones adentro")
+        modalidades = _modalidades(z, ruta.name)
         for nombre in nombres:
-            try:
-                datos = json.loads(z.read(nombre).decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError) as e:
-                raise ComprasInvalido(f"{ruta.name}/{nombre}: JSON ilegible ({e})") from None
-            for r in datos.get("releases") or []:
+            for r in _releases(z, nombre, ruta.name):
                 if "award" not in (r.get("tag") or []):
                     continue
                 fecha = datetime.fromisoformat(str(r["date"]).replace("Z", "+00:00")).date()
@@ -168,6 +173,7 @@ def iterar_adjudicaciones(ruta: Path) -> Iterator[dict]:
                             "comprador": comprador,
                             "proveedor": {"id": sup.get("id"), "nombre": sup.get("name")} if sup else None,
                             "estado": a.get("status"),
+                            "modalidad": modalidades.get(r["ocid"]),
                             "items": items,
                             "importes": importes,
                             "sin_moneda": sin_moneda,
@@ -175,10 +181,37 @@ def iterar_adjudicaciones(ruta: Path) -> Iterator[dict]:
                     )
 
 
-def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "") -> dict:
+def _releases(z: zipfile.ZipFile, nombre: str, archivo: str) -> list[dict]:
+    try:
+        datos = json.loads(z.read(nombre).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise ComprasInvalido(f"{archivo}/{nombre}: JSON ilegible ({e})") from None
+    return datos.get("releases") or []
+
+
+def _modalidades(z: zipfile.ZipFile, archivo: str) -> dict[str, str]:
+    """`ocid` -> modalidad del llamado (`tender.procurementMethodDetails`), de los llamados y
+    actualizaciones de llamados del mismo ZIP. Si un llamado se actualizó, vale la versión más nueva."""
+    vistas: dict[str, tuple[str, str]] = {}
+    for nombre in sorted(n for n in z.namelist() if _MENSUALES.match(n.rsplit("/", 1)[-1])):
+        for r in _releases(z, nombre, archivo):
+            modalidad = str((r.get("tender") or {}).get("procurementMethodDetails") or "").strip()
+            if not modalidad or "award" in (r.get("tag") or []):
+                continue
+            fecha = str(r.get("date") or "")
+            if r["ocid"] not in vistas or fecha >= vistas[r["ocid"]][0]:
+                vistas[r["ocid"]] = (fecha, modalidad)
+    return {ocid: m for ocid, (_, m) in vistas.items()}
+
+
+def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "", modalidad: str = "") -> dict:
     """Totales por moneda de las adjudicaciones activas, opcionalmente de un organismo (por nombre o
-    id) y de los ítems cuya descripción contiene `buscar` (sin importar tildes ni mayúsculas)."""
-    org, txt = _sin_tildes(organismo), _sin_tildes(buscar)
+    id), de los ítems cuya descripción contiene `buscar` y de una modalidad («compra directa»), sin
+    importar tildes ni mayúsculas. Las adjudicaciones de modalidad desconocida se cuentan en
+    `sin_modalidad` aunque se filtre por modalidad: no se sabe si eran de esa."""
+    org, txt, mod = _sin_tildes(organismo), _sin_tildes(buscar), _sin_tildes(modalidad)
+    por_modalidad: Counter = Counter()
+    sin_modalidad = 0
     excluidas: Counter = Counter()
     importes: dict[str, float] = defaultdict(float)
     por_comprador: dict[str, dict] = {}
@@ -194,6 +227,15 @@ def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "") -
         if a["estado"] != "active":
             excluidas[a["estado"]] += 1
             continue
+        m = a.get("modalidad")
+        if m is None:
+            sin_modalidad += 1
+            if mod:
+                continue
+        elif mod and _sin_tildes(m) != mod:
+            continue
+        else:
+            por_modalidad[m] += 1
         n += 1
         n_items += len(items)
         sin_proveedor += a["proveedor"] is None
@@ -245,6 +287,8 @@ def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "") -
         "importes": {m: round(v, 2) for m, v in sorted(importes.items(), key=lambda kv: -kv[1])},
         "sin_moneda": round(sin_moneda, 2),
         "excluidas_por_estado": dict(excluidas),
+        "por_modalidad": dict(por_modalidad.most_common()),
+        "sin_modalidad": sin_modalidad,
         "sin_proveedor": sin_proveedor,
         "sin_comprador": sin_comprador,
         "mayores_items": mayores,

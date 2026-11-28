@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.20.0 — 2026-11-27
+
+- **Compras: la modalidad de cada adjudicación** («Compra Directa», «Compra por Excepción»,
+  «Licitación Abreviada»…), tomada del llamado con el mismo `ocid` en el mismo ZIP; si el llamado se
+  actualizó, vale la versión más nueva. `resumen()` agrega `por_modalidad`, `sin_modalidad` y el
+  filtro `modalidad` (sin tildes ni mayúsculas). Medido el 2026-11-27: **el 65,8 % de las
+  adjudicaciones activas de 2025 no tiene llamado en el archivo** (68,7 % en 2024). Esas quedan con
+  `modalidad=None`, nunca como compra directa, y se cuentan aparte aunque se filtre. Cinco tests sin
+  red, en rojo antes del cambio.
+- Motivo: la discusión pública sobre compras (en X, en la prensa, en las Juntas Departamentales) gira
+  sobre «compra directa a dedo», y un porcentaje calculado con el dato abierto omite dos tercios.
+
 ## 0.19.3 — 2026-11-27
 
 - **Sanciones: el archivo 2017–2025 se lee, con sus trampas declaradas** (issue #13). Defensa del
