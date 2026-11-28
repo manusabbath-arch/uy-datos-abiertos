@@ -104,19 +104,60 @@ def test_una_fecha_ilegible_se_rechaza(tmp_path):
         sanciones.leer(p)
 
 
+ENCABEZADO_2025 = ENCABEZADO.replace("motivo_sancion", "tipo_infraccion")
+
+
+class TestArchivo2025:
+    """Medido el 2026-11-27 sobre `datos_sanciones_2017_2025.csv` (issue #13): la columna del motivo
+    pasó a llamarse `tipo_infraccion`, 1.738 de 1.835 RUT vienen en notación científica (`2,17795E+11`:
+    el archivo pasó por Excel y perdió dígitos) y los 229 apercibimientos de 2025 traen el monto vacío,
+    no 0."""
+
+    def _leer(self, tmp_path, *filas):
+        p = tmp_path / "s.csv"
+        p.write_text("\n".join([ENCABEZADO_2025, *filas]) + "\n", encoding="cp1252")
+        return sanciones.leer(p)
+
+    def test_el_encabezado_nuevo_da_el_mismo_campo(self, tmp_path):
+        (f,) = self._leer(tmp_path, FILAS[0])
+        assert f["motivo"] == "Precio no informado"
+
+    def test_un_rut_en_notacion_cientifica_es_none_y_conserva_el_texto(self, tmp_path):
+        (f,) = self._leer(tmp_path, "A PURA MANO LTDA;NUEVA ESTAMPA;2,17795E+11;MONTEVIDEO;31/5/2018;X;Multa;10")
+        assert f["rut"] is None  # nunca 217795000000: sería un RUT inventado
+        assert f["rut_crudo"] == "2,17795E+11"
+        r = sanciones.resumen([f])
+        assert r["rut_cientifico"] == 1 and r["rut_sin_12"] == 0
+
+    def test_un_rut_bueno_conserva_su_crudo(self, tmp_path):
+        (f,) = self._leer(tmp_path, FILAS[0])
+        assert (f["rut"], f["rut_crudo"]) == ("219000000004", "219000000004")
+
+    def test_un_monto_vacio_es_none_y_no_cero(self, tmp_path):
+        (f,) = self._leer(tmp_path, "OTRA SA;;210000000018;CANELONES;3/2/2025;Incomparecencia;Apercibimiento;")
+        assert f["monto_ur"] is None
+        assert sanciones.resumen([f])["monto_sin_dato"] == 1
+
+    def test_un_monto_con_texto_se_sigue_rechazando(self, tmp_path):
+        with pytest.raises(SancionesInvalido, match="monto"):
+            self._leer(tmp_path, "OTRA SA;;210000000018;CANELONES;3/2/2025;X;Multa;diez")
+
+
 @pytest.mark.red
 def test_el_archivo_real_del_dss(tmp_path):
-    """El archivo real, con lo medido el 2026-10-17: 168.759 bytes, sha256 241a78a1…, 1.528 filas,
-    483 por «Precio no informado» y **0 en Salto**. Si esto cambia, la fuente se movió: se vuelve
-    a medir y se actualiza el docstring, no el test."""
+    """El archivo real, con lo medido el 2026-11-27 (issue #13): 191.915 bytes, sha256 23894813…,
+    1.835 filas, 607 por «Precio no informado», 1.738 RUT en notación científica, 230 montos vacíos y
+    **0 en Salto**. Si esto cambia, la fuente se movió: se vuelve a medir y se actualizan el docstring y
+    estos números, sin aflojar el test. (Lo del 2026-10-17: 168.759 bytes, sha256 241a78a1…, 1.528.)"""
     from uydatos.procedencia import sha256
 
     destino = sanciones.descargar(tmp_path / "datos_sanciones.csv")
-    assert sha256(destino) == "241a78a15e951bf960f93efc12aebe0d04dc343b24198a2fa4899d1872dd4cd0"
+    assert sha256(destino) == "2389481356510dbfa2115bf33312e286349eeae4527500fdcc2e25b6a066eb26"
     filas = sanciones.leer(destino)
     r = sanciones.resumen(filas)
-    assert r["filas"] == 1528
-    assert r["por_motivo"]["Precio no informado"] == 483
-    assert r["por_tipo"] == {"Apercibimiento": 831, "Multa": 695, "Instrucción": 2}
-    assert r["rut_sin_12"] == 1
+    assert r["filas"] == 1835
+    assert r["por_motivo"]["Precio no informado"] == 607
+    assert r["por_tipo"] == {"Apercibimiento": 1060, "Multa": 772, "Instrucción": 3}
+    assert (r["rut_cientifico"], r["rut_sin_12"], r["monto_sin_dato"]) == (1738, 3, 230)
+    assert (r["anio_min"], r["anio_max"]) == (2017, 2025)
     assert "SALTO" not in r["departamentos"], "hay resoluciones en Salto: actualizar el docstring"

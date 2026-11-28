@@ -1,5 +1,21 @@
 # Cambios
 
+## 0.19.3 — 2026-11-27
+
+- **Sanciones: el archivo 2017–2025 se lee, con sus trampas declaradas** (issue #13). Defensa del
+  Consumidor reemplazó el CSV (1.835 resoluciones, ahora con 2025) y `sanciones.leer` lo rechazaba
+  por el encabezado. Medido el 2026-11-27:
+  - La columna del motivo pasó a llamarse `tipo_infraccion`: se aceptan los dos nombres y la salida
+    sigue siendo `motivo`.
+  - **1.738 de 1.835 RUT vienen en notación científica** (`2,17795E+11`): Excel perdió dígitos.
+    `rut` es `None` (nunca un número reconstruido), `rut_crudo` conserva el texto y `resumen()` los
+    cuenta en `rut_cientifico`. Solo 97 filas traen un RUT utilizable para cruzar.
+  - Los 229 apercibimientos de 2025 traen el monto vacío: `monto_ur` es `None`, no 0
+    (`monto_sin_dato`). Antes de 2025 los apercibimientos venían con 0, que sigue siendo 0.
+  - Las 307 resoluciones de 2025 no traen departamento.
+  - La línea de base (`docs/fuentes.json`) pasa a este archivo, y el test `red` mide los números
+    nuevos. Cinco tests sin red, en rojo antes del cambio.
+
 ## 0.19.2 — 2026-11-27
 
 - **INUMET: el viento vuelve a bajar.** Desde el 27/11/2026 el dataset del viento publica dos

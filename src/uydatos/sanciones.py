@@ -7,7 +7,20 @@ a 2024 (el corte es 2024: el archivo no se actualiza desde entonces, aunque el c
 `metadata_modified` del 2026-03-22 — el mismo sha256 que el 09/10, o sea que la fecha se movió sin
 que el dato cambiara).
 
-Las trampas, medidas:
+**Medido otra vez el 2026-11-27 (issue #13)**: el catálogo publica ahora `datos_sanciones_2017_2025.csv`,
+191.915 bytes, sha256 `2389481356510dbfa2115bf33312e286349eeae4527500fdcc2e25b6a066eb26`, **1.835
+resoluciones** de 2017 a 2025. Trae cuatro trampas nuevas, todas declaradas en vez de arregladas:
+
+- **La columna del motivo se llama `tipo_infraccion`** (antes `motivo_sancion`), con los mismos
+  valores. Se aceptan los dos encabezados; la salida sigue siendo `motivo`.
+- **1.738 de 1.835 RUT vienen en notación científica** (`2,17795E+11`): el archivo pasó por Excel y
+  perdió dígitos. No se reconstruyen: `rut` es `None`, `rut_crudo` conserva el texto y `resumen()`
+  los cuenta en `rut_cientifico`. Solo 97 filas traen un RUT utilizable.
+- **Los 229 apercibimientos de 2025 traen el monto vacío** (antes de 2025 venían con 0): `monto_ur`
+  es `None`, no 0, y `resumen()` lo cuenta en `monto_sin_dato`.
+- **Las 307 resoluciones de 2025 no traen departamento** (texto vacío, devuelto tal cual).
+
+Las trampas medidas el 2026-10-17 (siguen valiendo):
 
 - **El nombre del recurso no es el nombre del archivo.** El recurso se llama «Sanciones aplicadas a
   empresas» y el archivo `datos_sanciones_2017_2024.csv`: buscarlo por el nombre del archivo (lo
@@ -59,7 +72,10 @@ COLUMNAS = [
     "tipo_sancion",
     "monto_ur",
 ]
+# El 2026-11 el archivo pasó a llamar `tipo_infraccion` a la columna del motivo (mismos valores).
+COLUMNAS_2025 = [c if c != "motivo_sancion" else "tipo_infraccion" for c in COLUMNAS]
 CODIFICACION = "cp1252"
+_RUT_CIENTIFICO = re.compile(r"^\d+(?:[.,]\d+)?E\+\d+$", re.IGNORECASE)
 DELIMITADOR = ";"
 
 
@@ -110,7 +126,7 @@ def leer(ruta: Path) -> list[dict]:
             encabezado = [c.replace("\ufeff", "").strip() for c in next(lector)]
         except StopIteration:
             raise SancionesInvalido(f"{ruta}: archivo vacío") from None
-        if encabezado != COLUMNAS:
+        if encabezado not in (COLUMNAS, COLUMNAS_2025):
             raise SancionesInvalido(f"{ruta}: columnas inesperadas {encabezado}, se esperaban {COLUMNAS}")
         filas = []
         for n, campos in enumerate(lector, start=2):
@@ -120,14 +136,16 @@ def leer(ruta: Path) -> list[dict]:
                 raise SancionesInvalido(f"{ruta} fila {n}: {len(campos)} columnas, se esperaban {len(COLUMNAS)}")
             razon, comercial, rut, dpto, fecha_cruda, motivo, tipo, monto_crudo = (c.strip() for c in campos)
             try:
-                monto = int(monto_crudo)
+                monto: Optional[int] = int(monto_crudo) if monto_crudo else None  # vacío = sin dato, no 0
             except ValueError:
                 raise SancionesInvalido(f"{ruta} fila {n}: monto ilegible {monto_crudo!r} (no es un entero)") from None
             filas.append(
                 {
                     "razon_social": razon,
                     "nombre_comercial": comercial,
-                    "rut": rut,
+                    # `2,17795E+11`: Excel ya perdió dígitos. Convertirlo daría un RUT inventado.
+                    "rut": None if _RUT_CIENTIFICO.match(rut) else rut,
+                    "rut_crudo": rut,
                     "departamento": dpto,
                     "fecha": _fecha(fecha_cruda, ruta, n),
                     "motivo": motivo,
@@ -149,7 +167,9 @@ def resumen(filas: list[dict]) -> dict:
         "filas": len(filas),
         "por_motivo": dict(Counter(f["motivo"] for f in filas).most_common()),
         "por_tipo": dict(Counter(f["tipo"] for f in filas).most_common()),
-        "rut_sin_12": sum(1 for f in filas if len(f["rut"]) != 12),
+        "rut_sin_12": sum(1 for f in filas if f["rut"] is not None and len(f["rut"]) != 12),
+        "rut_cientifico": sum(1 for f in filas if f["rut"] is None),
+        "monto_sin_dato": sum(1 for f in filas if f["monto_ur"] is None),
         "anio_min": min(f["fecha"].year for f in filas),
         "anio_max": max(f["fecha"].year for f in filas),
         "departamentos": dict(Counter(f["departamento"] for f in filas).most_common()),
@@ -171,7 +191,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"{f['fecha']} {f['departamento']:<12} {f['tipo']:<15} {f['motivo']:<28} {f['razon_social'][:40]}")
         return 0
     r = resumen(filas)
-    print(f"{r['filas']} resoluciones de {r['anio_min']} a {r['anio_max']} · RUT sin 12: {r['rut_sin_12']}")
+    print(
+        f"{r['filas']} resoluciones de {r['anio_min']} a {r['anio_max']} · RUT sin 12: {r['rut_sin_12']}"
+        f" · RUT en notación científica (irrecuperables): {r['rut_cientifico']} · monto sin dato: {r['monto_sin_dato']}"
+    )
     for k, v in list(r["por_motivo"].items())[:5]:
         print(f"  {v:>4}  {k}")
     print("  por departamento:", ", ".join(f"{k} {v}" for k, v in list(r["departamentos"].items())[:5]))

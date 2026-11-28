@@ -280,10 +280,11 @@ FUENTES: dict[str, Fuente] = {
         "datasets": (sanciones.DATASET,),
         # El lector elige el ÚNICO CSV del dataset: no hay nombre de archivo que vigilar.
         "recurso": None,
-        "medido": "2026-10-17",
+        "medido": "2026-11-27",
         "trampa": (
-            "El nombre del recurso no es el nombre del archivo, el `rut` viene con relleno y una "
-            "fila tiene un RUT de 3 caracteres."
+            "El nombre del recurso no es el nombre del archivo y el `rut` viene con relleno. Desde "
+            "2026-11, 1.738 de 1.835 RUT vienen en notación científica (Excel perdió dígitos) y los "
+            "apercibimientos de 2025 traen el monto vacío."
         ),
     },
     "semanas": {

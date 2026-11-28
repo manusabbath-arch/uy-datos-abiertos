@@ -36,7 +36,7 @@ Módulos:
 - `errores`      — la base común de los rechazos: `DatosInvalidos`, que atrapa a los diecinueve.
 """
 
-__version__ = "0.19.2"
+__version__ = "0.19.3"
 
 # `Mozilla/5.0 (compatible; nombre/versión; +url)` es la convención de un cliente que no es navegador.
 # parlamento.gub.uy (CloudFront) responde 403 a `uydatos/X (…)` y 200 a esta forma (medido el
