@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.20.1 — 2026-11-28
+
+- **Compras: la modalidad sin parsear dos veces el año.** 0.20.0 leía todos los JSON para juntar los
+  llamados y después volvía a leer las adjudicaciones: el año 2025 pasó de 12,7 s a 29 s en
+  `mcp-uruguay`. Ahora los llamados salen de los archivos `l-`, y los que vienen dentro de un `a-` se
+  suman al recorrerlo. Mismo resultado sobre 2024 y 2025: ninguno de esos llamados tiene una
+  adjudicación en el año.
+
 ## 0.20.0 — 2026-11-27
 
 - **Compras: la modalidad de cada adjudicación** («Compra Directa», «Compra por Excepción»,

@@ -276,6 +276,11 @@ class TestModalidad:
         (x,) = leer_adjudicaciones(_zip_con_llamados(tmp_path, [_adjudicacion(1, IM, [_item("X", 1, 1)])], ll))
         assert x["modalidad"] == "Compra Directa"
 
+    def test_un_llamado_dentro_del_archivo_de_adjudicaciones_tambien_cuenta(self, tmp_path):
+        r = [_llamado(5, "Compra por Excepción"), _adjudicacion(5, IM, [_item("X", 1, 1)])]
+        (x,) = leer_adjudicaciones(_zip_con_llamados(tmp_path, r, []))
+        assert x["modalidad"] == "Compra por Excepción"
+
     def test_el_resumen_cuenta_por_modalidad_y_las_desconocidas_aparte(self, tmp_path):
         a = [_adjudicacion(i, IM, [_item("X", 1, 10)]) for i in (1, 2, 3, 4)]
         ll = [_llamado(1, "Compra Directa"), _llamado(2, "Compra Directa"), _llamado(3, "Compra por Excepción")]

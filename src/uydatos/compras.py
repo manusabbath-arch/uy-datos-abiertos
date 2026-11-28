@@ -66,7 +66,7 @@ from uydatos.errores import DatosInvalidos
 
 DATASET = "arce-datos-historicos-de-compras"
 _ADJUDICACIONES = re.compile(r"^a-(\d{2})-(\d{4})\.json$")
-_MENSUALES = re.compile(r"^[al]-(\d{2})-(\d{4})\.json$")
+_LLAMADOS = re.compile(r"^l-(\d{2})-(\d{4})\.json$")
 
 # Código ISO de la moneda en OCDS -> código de la cotización del BCU (consultado en awsbcumonedas el
 # 10/10/2026). Dólar y real: el billete, que es la serie que usa el resto del paquete; qué cotización
@@ -156,9 +156,12 @@ def iterar_adjudicaciones(ruta: Path) -> Iterator[dict]:
         nombres = sorted(n for n in z.namelist() if _ADJUDICACIONES.match(n.rsplit("/", 1)[-1]))
         if not nombres:
             raise ComprasInvalido(f"{ruta.name}: ningún archivo a-MM-AAAA.json de adjudicaciones adentro")
-        modalidades = _modalidades(z, ruta.name)
+        vistas = _modalidades(z, ruta.name)
         for nombre in nombres:
-            for r in _releases(z, nombre, ruta.name):
+            releases = _releases(z, nombre, ruta.name)
+            _anotar_modalidades(releases, vistas)  # los llamados que trae el propio archivo `a-`
+            modalidades = {ocid: m for ocid, (_, m) in vistas.items()}
+            for r in releases:
                 if "award" not in (r.get("tag") or []):
                     continue
                 fecha = datetime.fromisoformat(str(r["date"]).replace("Z", "+00:00")).date()
@@ -189,19 +192,27 @@ def _releases(z: zipfile.ZipFile, nombre: str, archivo: str) -> list[dict]:
     return datos.get("releases") or []
 
 
-def _modalidades(z: zipfile.ZipFile, archivo: str) -> dict[str, str]:
-    """`ocid` -> modalidad del llamado (`tender.procurementMethodDetails`), de los llamados y
-    actualizaciones de llamados del mismo ZIP. Si un llamado se actualizó, vale la versión más nueva."""
+def _anotar_modalidades(releases: list[dict], vistas: dict[str, tuple[str, str]]) -> None:
+    """Agrega a `vistas` (`ocid` -> (fecha, modalidad)) la modalidad de cada llamado o actualización
+    de llamado (`tender.procurementMethodDetails`). Si un llamado se actualizó, vale el más nuevo."""
+    for r in releases:
+        modalidad = str((r.get("tender") or {}).get("procurementMethodDetails") or "").strip()
+        if not modalidad or "award" in (r.get("tag") or []):
+            continue
+        fecha = str(r.get("date") or "")
+        if r["ocid"] not in vistas or fecha >= vistas[r["ocid"]][0]:
+            vistas[r["ocid"]] = (fecha, modalidad)
+
+
+def _modalidades(z: zipfile.ZipFile, archivo: str) -> dict[str, tuple[str, str]]:
+    """Las modalidades de los archivos de llamados (`l-MM-AAAA.json`). Los llamados que vienen dentro
+    de los archivos `a-` se agregan al recorrerlos, para no parsear dos veces los JSON más pesados:
+    ninguno de esos llamados tiene una adjudicación en el mismo año (0 en 2024 y 2025, medido el
+    2026-11-27), pero si apareciera en su mismo archivo se vería."""
     vistas: dict[str, tuple[str, str]] = {}
-    for nombre in sorted(n for n in z.namelist() if _MENSUALES.match(n.rsplit("/", 1)[-1])):
-        for r in _releases(z, nombre, archivo):
-            modalidad = str((r.get("tender") or {}).get("procurementMethodDetails") or "").strip()
-            if not modalidad or "award" in (r.get("tag") or []):
-                continue
-            fecha = str(r.get("date") or "")
-            if r["ocid"] not in vistas or fecha >= vistas[r["ocid"]][0]:
-                vistas[r["ocid"]] = (fecha, modalidad)
-    return {ocid: m for ocid, (_, m) in vistas.items()}
+    for nombre in sorted(n for n in z.namelist() if _LLAMADOS.match(n.rsplit("/", 1)[-1])):
+        _anotar_modalidades(_releases(z, nombre, archivo), vistas)
+    return vistas
 
 
 def resumen(adjudicaciones: list[dict], organismo: str = "", buscar: str = "", modalidad: str = "") -> dict:
